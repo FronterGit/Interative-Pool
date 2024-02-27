@@ -9,12 +9,15 @@ public class MeasureDepth : MonoBehaviour
     // Setup
     [Header("References")]
     [SerializeField] private MultiSourceManager multiSourceManager;
+    [SerializeField] private ParticleSpawner particleSpawner;
+    [SerializeField] private GameObject viewer;
     
     // Declarations
     private KinectSensor sensor;
     private CoordinateMapper coordinateMapper;
     private Camera mainCamera;
     private Rect validSpaceRect;
+    private bool debug = true;
     
     // Cutoff values
     [Header("Wall Depth")]
@@ -56,22 +59,50 @@ public class MeasureDepth : MonoBehaviour
 
     private void Update()
     {
+        
         // Get the valid points
         validPoints = DepthToColor();
         
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
+        Debug.Log(triggerPoints.Count);
         
         // When space is pressed, create the validSpaceRect and texture
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            validSpaceRect = CreateRect(validPoints);
+            debug = !debug;
+            viewer.SetActive(debug);
+        }
+        
+        if (debug)
+        {
+            CreateRect(validPoints);
             depthTexture = CreateTexture(validPoints);
+        }
+        else
+        {
+            SpawnParticles(triggerPoints);
+        }
+    }
+    
+    private void SpawnParticles(List<Vector2> triggerPoints)
+    {
+        // If no trigger points, return
+        if (triggerPoints.Count == 0)
+        {
+            return;
+        }
+        
+        foreach (Vector2 point in triggerPoints)
+        {
+            particleSpawner.SpawnParticle(point);
         }
     }
 
     private void OnGUI()
     {
+        if (!debug) return;
+        
         // Draw the validSpaceRect
         GUI.Box(validSpaceRect, "");
 

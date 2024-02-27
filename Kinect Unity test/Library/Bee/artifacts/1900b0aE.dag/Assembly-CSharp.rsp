@@ -363,8 +363,9 @@
 "Assets/KinectView/Scripts/InfraredSourceManager.cs"
 "Assets/KinectView/Scripts/InfraredSourceView.cs"
 "Assets/KinectView/Scripts/MultiSourceManager.cs"
-"Assets/Scripts/ImageViewer.cs"
-"Assets/Scripts/MeasureDepth.cs"
+"Assets/ParticleSpawner.cs"
+"Assets/_Scripts/ImageViewer.cs"
+"Assets/_Scripts/MeasureDepth.cs"
 -langversion:9.0
 
 /deterministic
