@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Windows.Kinect;
+using Unity.VisualScripting;
 
 public class MeasureDepth : MonoBehaviour
 {
@@ -24,6 +25,7 @@ public class MeasureDepth : MonoBehaviour
     [Range(0, 10.0f)] public float depthCutoff = 0.1f;
     [Range(0, 1.0f)] public float depthSensitivity = 0.1f;
     [Range(-10f, 10f)] public float wallDepth = -10f;
+    public float sensitivity = 0.1f;
     
     [Header("Cutoffs")]
     [Range(-1f, 1f)] public float topCutoff = 1f;
@@ -37,6 +39,10 @@ public class MeasureDepth : MonoBehaviour
     private ColorSpacePoint[] colorSpacePoints;
     private List<ValidPoint> validPoints;
     private List<Vector2> triggerPoints;
+
+    private List<Vector3> wallPoints;
+    private Dictionary<float, float> wallDepths;
+    private bool once = false;
     
     // Depth Variables
     private readonly Vector2Int depthResolution = new Vector2Int(512, 424);
@@ -55,23 +61,29 @@ public class MeasureDepth : MonoBehaviour
         // Initialize the arrays
         cameraSpacePoints = new CameraSpacePoint[arraySize];
         colorSpacePoints = new ColorSpacePoint[arraySize];
+        
+        wallPoints = new List<Vector3>();
+        wallDepths = new Dictionary<float, float>();
     }
 
     private void Update()
     {
-        
         // Get the valid points
         validPoints = DepthToColor();
         
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
-        Debug.Log(triggerPoints.Count);
         
         // When space is pressed, create the validSpaceRect and texture
         if (Input.GetKeyDown(KeyCode.Space))
         {
             debug = !debug;
             viewer.SetActive(debug);
+        }
+
+        if (Input.GetKeyDown(KeyCode.A))
+        {
+            SetWallDepth();
         }
         
         if (debug)
@@ -84,7 +96,18 @@ public class MeasureDepth : MonoBehaviour
             SpawnParticles(triggerPoints);
         }
     }
-    
+
+    private void SetWallDepth()
+    {
+        wallPoints.Clear();
+        wallDepths.Clear();
+        for(int i = 0; i < validPoints.Count; i++)
+        {
+            wallPoints.Add(new Vector3(validPoints[i].colorSpace.X, validPoints[i].colorSpace.Y, validPoints[i].z));
+            wallDepths.Add(validPoints[i].pos, validPoints[i].z);
+        }
+    }
+
     private void SpawnParticles(List<Vector2> triggerPoints)
     {
         // If no trigger points, return
@@ -159,14 +182,23 @@ public class MeasureDepth : MonoBehaviour
                     continue;
                 
                 // Create a valid point
-                ValidPoint point = new ValidPoint(colorSpacePoints[index], cameraSpacePoints[index].Z);
+                ValidPoint point = new ValidPoint(colorSpacePoints[index], index, cameraSpacePoints[index].Z);
 
-                // If the point is within the wall depth, set the withinWallDepth to true
-                if (cameraSpacePoints[index].Z >= wallDepth)
-                {
-                    point.withinWallDepth = true;
-                }
+                // // // If the point is within the wall depth, set the withinWallDepth to true
+                // if (cameraSpacePoints[index].Z >= wallDepth)
+                // {
+                //     point.withinWallDepth = true;
+                // }
                 
+
+                    if(wallDepths.TryGetValue(point.pos, out var depth))
+                    {
+                        if(depth >= point.z)
+                        {
+                            point.withinWallDepth = true;
+                        }
+                    }
+
                 // Add the point to the list
                 validPoints.Add(point);
             }
@@ -178,21 +210,37 @@ public class MeasureDepth : MonoBehaviour
     {
         // Create a list of trigger points
         List<Vector2> triggerPoints = new List<Vector2>();
-        
+
         // For each valid point
+        int index = 0;
         foreach (ValidPoint point in points)
         {
+            //if(point.withinWallDepth) Debug.Log("Within wall depth");
             // If the point is not within the wall depth
             if (!point.withinWallDepth)
             {
-                // If the point is within the wall depth sensitivity
-                if(point.z < wallDepth * depthSensitivity && point.z > depthCutoff)
+                // // If the point is within the wall depth sensitivity
+                // if(point.z < wallDepth * depthSensitivity && point.z > depthCutoff)
+                // {
+                //     // Add the point to the trigger points
+                //     Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
+                //     triggerPoints.Add(screenPoint);
+                // }
+
+                if (wallDepths.TryGetValue(point.pos, out var depth))
                 {
-                    // Add the point to the trigger points
-                    Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
-                    triggerPoints.Add(screenPoint);
+                    //Debug.Log("Depth: " + depth + " Point: " + point.z);
+                    
+                    if(depth + sensitivity < point.z)
+                    {
+                        Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
+                        triggerPoints.Add(screenPoint);
+                    }
                 }
+                else Debug.Log(point.pos);
             }
+
+            index++;
         }
         return triggerPoints;
     }
@@ -311,12 +359,18 @@ public class MeasureDepth : MonoBehaviour
     {
         public ColorSpacePoint colorSpace;
         public float z;
+        public float wallDepth;
         public bool withinWallDepth;
         
-        public ValidPoint(ColorSpacePoint colorSpace, float z)
+        public int screenX;
+        public int screenY;
+        public float pos;
+        
+        public ValidPoint(ColorSpacePoint colorSpace, int index, float z)
         {
             this.colorSpace = colorSpace;
             this.z = z;
+            this.pos = index;
         }
     }
 }
