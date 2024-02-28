@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Windows.Kinect;
 using Unity.VisualScripting;
+using UnityEngine.Serialization;
 
 public class MeasureDepth : MonoBehaviour
 {
@@ -21,17 +22,16 @@ public class MeasureDepth : MonoBehaviour
     private bool debug = true;
     
     // Cutoff values
-    [Header("Wall Depth")]
-    [Range(0, 10.0f)] public float depthCutoff = 0.1f;
-    [Range(0, 1.0f)] public float depthSensitivity = 0.1f;
-    [Range(-10f, 10f)] public float wallDepth = -10f;
-    [Range(-0.02f, 0f)] public float sensitivity = -0.01f;
+    [Header("Depth settings")] 
+    [Range(1, 8)] public int accuracy = 2;
+    [Range(-0.03f, 0f)] public float rangeFromSurface = -0.01f;
     
     [Header("Cutoffs")]
-    [Range(-1f, 1f)] public float topCutoff = 1f;
-    [Range(-1f, 1f)] public float bottomCutoff = -1f;
-    [Range(-1f, 1f)] public float leftCutoff = -1f;
-    [Range(-1f, 1f)] public float rightCutoff = 1f;
+    [Range(-1.5f, 1.5f)] public float topCutoff = 1f;
+    [Range(-1.5f, 1.5f)] public float bottomCutoff = -1f;
+    [Range(-1.5f, 1.5f)] public float leftCutoff = -1f;
+    [Range(-1.5f, 1.5f)] public float rightCutoff = 1f;
+    [Range(0f, 3f)] public float heightCutoff = 0.5f;
     
     // Depth data
     private ushort[] depthData;
@@ -39,14 +39,26 @@ public class MeasureDepth : MonoBehaviour
     private ColorSpacePoint[] colorSpacePoints;
     private List<ValidPoint> validPoints;
     private List<Vector2> triggerPoints;
-
-    private List<Vector3> wallPoints;
     private Dictionary<float, float> wallDepths;
-    private bool once = false;
     
     // Depth Variables
-    private readonly Vector2Int depthResolution = new Vector2Int(512, 424);
+    private readonly Vector2Int depthResolution = new(512, 424);
     public Texture2D depthTexture;
+    
+    // Custom rect variables
+    private enum Corner
+    {
+        TopLeft,
+        TopRight,
+        BottomRight
+    }
+    private Corner corner;
+    private Rect customRect;
+    
+    private float highestX;
+    private float lowestX;
+    private float highestY;
+    private float lowestY;
     
     private void Awake()
     {
@@ -58,11 +70,9 @@ public class MeasureDepth : MonoBehaviour
         // The array size is the product of the x and y resolution
         int arraySize = depthResolution.x * depthResolution.y;
         
-        // Initialize the arrays
+        // Initialize the arrays/dictionaries
         cameraSpacePoints = new CameraSpacePoint[arraySize];
         colorSpacePoints = new ColorSpacePoint[arraySize];
-        
-        wallPoints = new List<Vector3>();
         wallDepths = new Dictionary<float, float>();
     }
 
@@ -74,23 +84,37 @@ public class MeasureDepth : MonoBehaviour
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
         
-        // When space is pressed, create the validSpaceRect and texture
         if (Input.GetKeyDown(KeyCode.Space))
         {
+            // Toggle debug
             debug = !debug;
+            
+            // Toggle the viewer
             viewer.SetActive(debug);
             
+            // If debug, create the rect and texture
             if (debug)
             {
-                CreateRect(validPoints);
+                
                 depthTexture = CreateTexture(validPoints);
             }
-            Debug.Log(triggerPoints.Count);
         }
-
+        CreateValidPointRect(validPoints);
         if (Input.GetKeyDown(KeyCode.A))
         {
             SetWallDepth();
+        }
+        
+        //on mouse click, create custom rect
+        if (Input.GetMouseButtonDown(0))
+        {
+            CreateCustomRect();
+        }
+        
+        // on right mouse click, reset corner
+        if (Input.GetMouseButtonDown(1))
+        {
+            corner = Corner.TopLeft;
         }
         
         if(!debug)
@@ -102,13 +126,16 @@ public class MeasureDepth : MonoBehaviour
 
     private void SetWallDepth()
     {
+        // Get the valid points
         validPoints = DepthToColor(true);
-        wallPoints.Clear();
+        
+        // Clear any previous wall depths
         wallDepths.Clear();
+        
+        // Set the wall depths
         for(int i = 0; i < validPoints.Count; i++)
         {
-            wallPoints.Add(new Vector3(validPoints[i].colorSpace.X, validPoints[i].colorSpace.Y, validPoints[i].z));
-            wallDepths.Add(validPoints[i].pos, validPoints[i].z);
+            wallDepths.Add(validPoints[i].index, validPoints[i].z);
         }
     }
 
@@ -120,6 +147,7 @@ public class MeasureDepth : MonoBehaviour
             return;
         }
         
+        // For each trigger point, tell the particle spawner to spawn a particle at the trigger point
         foreach (Vector2 point in triggerPoints)
         {
             particleSpawner.SpawnParticle(point);
@@ -132,6 +160,11 @@ public class MeasureDepth : MonoBehaviour
         
         // Draw the validSpaceRect
         GUI.Box(validSpaceRect, "");
+        
+        // Draw the customRect
+        GUI.color = Color.blue;
+        GUI.Box(customRect, "");
+        GUI.color = Color.black;
 
         // Return and debug if no trigger points
         if (triggerPoints == null)
@@ -156,60 +189,76 @@ public class MeasureDepth : MonoBehaviour
         // Get the depth data from the MultiSourceManager
         depthData = multiSourceManager.GetDepthData();
         
-        // Map the depth data to the color space
+        // Map the depth data to the space
         coordinateMapper.MapDepthFrameToCameraSpace(depthData, cameraSpacePoints);
         coordinateMapper.MapDepthFrameToColorSpace(depthData, colorSpacePoints);
         
-        // We don't want to check every single point, so we skip some
-        int skip = 8;
-        
         // Set the valid points
-        for(int x = 0; x < depthResolution.x / skip; x++)
+        for(int x = 0; x < depthResolution.x / accuracy; x++)
         {
-            for(int y = 0; y < depthResolution.y / skip; y++)
+            for(int y = 0; y < depthResolution.y / accuracy; y++)
             {
                 // Get the index
                 int index = (y * depthResolution.x) + x;
-                index *= skip;
+                index *= accuracy;
 
+                // If we're not setting the wall depth, check if the point is within the cutoffs
                 if (!setWallDepth)
                 {
-                    // If the point is inside the cutoffs, continue
                     if (cameraSpacePoints[index].X < leftCutoff)
                         continue;
-                
+                    
                     if (cameraSpacePoints[index].X > rightCutoff)
                         continue;
-                
+                    
                     if (cameraSpacePoints[index].Y < bottomCutoff)
                         continue;
-                
+                    
                     if (cameraSpacePoints[index].Y > topCutoff)
                         continue;
+                    
+                    //skip infinities
+                    if (float.IsInfinity(cameraSpacePoints[index].X) || float.IsInfinity(cameraSpacePoints[index].Y) || float.IsInfinity(cameraSpacePoints[index].Z))
+                    {
+                        continue;
+                    }
+                    SetHighestAndLowest(cameraSpacePoints[index]);
                 }
                 
                 // Create a valid point
                 ValidPoint point = new ValidPoint(colorSpacePoints[index], index, cameraSpacePoints[index].Z);
-
-                // // // If the point is within the wall depth, set the withinWallDepth to true
-                // if (cameraSpacePoints[index].Z >= wallDepth)
-                // {
-                //     point.withinWallDepth = true;
-                // }
                 
-                    // if(wallDepths.TryGetValue(point.pos, out var depth))
-                    // {
-                    //     if(depth >= point.z)
-                    //     {
-                    //         point.withinWallDepth = true;
-                    //     }
-                    // }
-
                 // Add the point to the list
                 validPoints.Add(point);
             }
         }
         return validPoints;
+    }
+    
+    private void SetHighestAndLowest(CameraSpacePoint point)
+    {
+        // Remember the highest and lowest x and y values
+        float oldHighestX = highestX;
+        float oldLowestX = lowestX;
+        float oldHighestY = highestY;
+        float oldLowestY = lowestY;
+        
+        if (point.X > highestX)
+        {
+            highestX = point.X;
+        }
+        if (point.X < lowestX)
+        {
+            lowestX = point.X;
+        }
+        if (point.Y > highestY)
+        {
+            highestY = point.Y;
+        }
+        if (point.Y < lowestY)
+        {
+            lowestY = point.Y;
+        }
     }
 
     private List<Vector2> FilterToTrigger(List<ValidPoint> points)
@@ -220,30 +269,16 @@ public class MeasureDepth : MonoBehaviour
         // For each valid point
         foreach (ValidPoint point in points)
         {
-            //if(point.withinWallDepth) Debug.Log("Within wall depth");
-            // If the point is not within the wall depth
-            if (!point.withinWallDepth)
+            // If the point has a wall depth, look up its wall depth via the index
+            if (wallDepths.TryGetValue(point.index, out var depth))
             {
-                // // If the point is within the wall depth sensitivity
-                // if(point.z < wallDepth * depthSensitivity && point.z > depthCutoff)
-                // {
-                //     // Add the point to the trigger points
-                //     Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
-                //     triggerPoints.Add(screenPoint);
-                // }
-
-
-                //else Debug.Log(point.pos);
-            }
-            
-            if (wallDepths.TryGetValue(point.pos, out var depth))
-            {
-                if(depth + sensitivity > point.z)
+                // If the point has a higher z value than the wall depth
+                if(depth + rangeFromSurface > point.z && point.z > heightCutoff)
                 {
+                    // Add the point to the trigger points
                     Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
                     triggerPoints.Add(screenPoint);
                 }
-                //else Debug.Log("Depth: " + depth + " Point: " + point.z);
             }
         }
         return triggerPoints;
@@ -275,7 +310,7 @@ public class MeasureDepth : MonoBehaviour
     }
 
     #region Rect Creation
-    private Rect CreateRect(List<ValidPoint> points)
+    private Rect CreateValidPointRect(List<ValidPoint> points)
     {
         // If no points, return empty validSpaceRect
         if (points.Count == 0)
@@ -303,6 +338,87 @@ public class MeasureDepth : MonoBehaviour
         return validSpaceRect;
     }
 
+    private Rect CreateCustomRect()
+    {
+        switch(corner)
+        {
+            case Corner.TopLeft:
+                customRect = new Rect(Input.mousePosition.x, -Input.mousePosition.y + 1080, 1, 1);
+                
+                //Set the left cutoff
+                leftCutoff = CameraToScreen(customRect.position).x;
+                
+                //Set the top cutoff
+                topCutoff = -CameraToScreen(customRect.position).y;
+                
+                corner = Corner.TopRight;
+                break;
+            case Corner.TopRight:
+                customRect.width = Input.mousePosition.x - customRect.x;
+                
+                //Set the right cutoff
+                rightCutoff = CameraToScreen(new Vector2(Input.mousePosition.x, customRect.position.y)).x;
+                
+                corner = Corner.BottomRight;
+                break;
+            case Corner.BottomRight:
+                customRect.height = -1 * (customRect.position.y - (-Input.mousePosition.y + 1080));
+                
+                //Set the bottom cutoff
+                bottomCutoff = -CameraToScreen(new Vector2(customRect.position.x, -Input.mousePosition.y + 1080)).y;
+                
+                corner = Corner.TopLeft;
+                break;
+        }
+        //debug log all the cutoffs
+        Debug.Log("Left: " + leftCutoff + " Right: " + rightCutoff + " Top: " + topCutoff + " Bottom: " + bottomCutoff);
+    
+        return customRect;
+    }
+    
+    // private Rect CreateCustomRect()
+    // {
+    //     Vector2 mousePos;
+    //     switch(corner)
+    //     {
+    //         case Corner.TopLeft:
+    //             customRect = new Rect(Input.mousePosition.x, -Input.mousePosition.y + 1080, 1, 1);
+    //             
+    //             //Set the left cutoff
+    //             mousePos = MouseToDepth(Input.mousePosition);
+    //             leftCutoff = CameraToScreen(mousePos).x;
+    //             
+    //             //Set the top cutoff
+    //             mousePos = MouseToDepth(Input.mousePosition);
+    //             topCutoff = -CameraToScreen(mousePos).y;
+    //             
+    //             corner = Corner.TopRight;
+    //             break;
+    //         case Corner.TopRight:
+    //             customRect.width = Input.mousePosition.x - customRect.x;
+    //             
+    //             //Set the right cutoff
+    //             mousePos = MouseToDepth(Input.mousePosition);
+    //             rightCutoff = CameraToScreen(mousePos).x;
+    //             
+    //             corner = Corner.BottomRight;
+    //             break;
+    //         case Corner.BottomRight:
+    //             customRect.height = -1 * (customRect.position.y - (-Input.mousePosition.y + 1080));
+    //             
+    //             //Set the bottom cutoff
+    //             mousePos = MouseToDepth(Input.mousePosition);
+    //             bottomCutoff = -CameraToScreen(new Vector2(customRect.position.x, -mousePos.y + 1080)).y;
+    //             
+    //             corner = Corner.TopLeft;
+    //             break;
+    //     }
+    //     //debug log all the cutoffs
+    //     Debug.Log("Left: " + leftCutoff + " Right: " + rightCutoff + " Top: " + topCutoff + " Bottom: " + bottomCutoff);
+    //
+    //     return customRect;
+    // }
+
     // Method that gets the top left point of the valid points
     private Vector2 GetTopLeft(List<ValidPoint> points)
     {
@@ -320,7 +436,6 @@ public class MeasureDepth : MonoBehaviour
             {
                 topLeft.y = point.colorSpace.Y;
             }
-            
         }
         return topLeft;
     }
@@ -357,24 +472,43 @@ public class MeasureDepth : MonoBehaviour
         return screenPoint;
     }
     
+    // Method that translates the mouse position on this resolution to the depth resolution
+    private Vector2 MouseToDepth(Vector2 mousePosition)
+    {
+        Vector2 normalizedMousePoint = 
+            new Vector2(Mathf.InverseLerp(0, 1920, mousePosition.x), Mathf.InverseLerp(0, 1080, mousePosition.y));
+        
+        Vector2 depthPoint = new Vector2(normalizedMousePoint.x * 1000, normalizedMousePoint.y * 1000);
+        
+        return depthPoint;
+    }
+    
+    // Method that translates the camera position to screen position
+    private Vector2 CameraToScreen(Vector2 cameraPosition)
+    {
+        // Highest X: 1.201952 Lowest X: -1.239277 Highest Y: 1.074169 Lowest Y: -0.9924252
+        // Normalize the camera position based on the camera's pixel width and height
+        Vector2 normalizedCameraPoint = new Vector2(cameraPosition.x / mainCamera.pixelWidth, cameraPosition.y / mainCamera.pixelHeight);
+    
+        // Convert the normalized camera position to screen coordinates
+        Vector2 screenPoint = new Vector2(Mathf.Lerp(-1.239277f, 1.201952f, normalizedCameraPoint.x), Mathf.Lerp(-0.9924252f, 1.074169f, normalizedCameraPoint.y));
+    
+        return screenPoint;
+    }
+    
     #endregion
     
     public class ValidPoint
     {
         public ColorSpacePoint colorSpace;
         public float z;
-        public float wallDepth;
-        public bool withinWallDepth;
-        
-        public int screenX;
-        public int screenY;
-        public float pos;
+        public float index;
         
         public ValidPoint(ColorSpacePoint colorSpace, int index, float z)
         {
             this.colorSpace = colorSpace;
             this.z = z;
-            this.pos = index;
+            this.index = index;
         }
     }
 }

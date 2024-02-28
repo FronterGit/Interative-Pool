@@ -5546,14 +5546,13 @@ MonoBehaviour:
   multiSourceManager: {fileID: 37903033}
   particleSpawner: {fileID: 506882120}
   viewer: {fileID: 324076149}
-  depthCutoff: 1.6
-  depthSensitivity: 0.58
-  wallDepth: 2.935
-  sensitivity: -0.02
+  accuracy: 8
+  rangeFromSurface: -0.0069
   topCutoff: 0.5
   bottomCutoff: -0.52
   leftCutoff: -0.69
   rightCutoff: 0.11
+  heightCutoff: 1.66
   depthTexture: {fileID: 0}
 --- !u!4 &1753546446
 Transform:
