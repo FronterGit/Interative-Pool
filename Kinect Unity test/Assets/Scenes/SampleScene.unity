@@ -5549,6 +5549,7 @@ MonoBehaviour:
   depthCutoff: 1.6
   depthSensitivity: 0.58
   wallDepth: 2.935
+  sensitivity: -0.02
   topCutoff: 0.5
   bottomCutoff: -0.52
   leftCutoff: -0.69

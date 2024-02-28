@@ -25,7 +25,7 @@ public class MeasureDepth : MonoBehaviour
     [Range(0, 10.0f)] public float depthCutoff = 0.1f;
     [Range(0, 1.0f)] public float depthSensitivity = 0.1f;
     [Range(-10f, 10f)] public float wallDepth = -10f;
-    public float sensitivity = 0.1f;
+    [Range(-0.02f, 0f)] public float sensitivity = -0.01f;
     
     [Header("Cutoffs")]
     [Range(-1f, 1f)] public float topCutoff = 1f;
@@ -79,6 +79,13 @@ public class MeasureDepth : MonoBehaviour
         {
             debug = !debug;
             viewer.SetActive(debug);
+            
+            if (debug)
+            {
+                CreateRect(validPoints);
+                depthTexture = CreateTexture(validPoints);
+            }
+            Debug.Log(triggerPoints.Count);
         }
 
         if (Input.GetKeyDown(KeyCode.A))
@@ -86,19 +93,16 @@ public class MeasureDepth : MonoBehaviour
             SetWallDepth();
         }
         
-        if (debug)
-        {
-            CreateRect(validPoints);
-            depthTexture = CreateTexture(validPoints);
-        }
-        else
+        if(!debug)
         {
             SpawnParticles(triggerPoints);
         }
+
     }
 
     private void SetWallDepth()
     {
+        validPoints = DepthToColor(true);
         wallPoints.Clear();
         wallDepths.Clear();
         for(int i = 0; i < validPoints.Count; i++)
@@ -144,7 +148,7 @@ public class MeasureDepth : MonoBehaviour
         }
     }
 
-    private List<ValidPoint> DepthToColor()
+    private List<ValidPoint> DepthToColor(bool setWallDepth = false)
     {
         // Create a list of valid points
         List<ValidPoint> validPoints = new List<ValidPoint>();
@@ -167,19 +171,22 @@ public class MeasureDepth : MonoBehaviour
                 // Get the index
                 int index = (y * depthResolution.x) + x;
                 index *= skip;
+
+                if (!setWallDepth)
+                {
+                    // If the point is inside the cutoffs, continue
+                    if (cameraSpacePoints[index].X < leftCutoff)
+                        continue;
                 
-                // If the point is inside the cutoffs, continue
-                if (cameraSpacePoints[index].X < leftCutoff)
-                    continue;
+                    if (cameraSpacePoints[index].X > rightCutoff)
+                        continue;
                 
-                if (cameraSpacePoints[index].X > rightCutoff)
-                    continue;
+                    if (cameraSpacePoints[index].Y < bottomCutoff)
+                        continue;
                 
-                if (cameraSpacePoints[index].Y < bottomCutoff)
-                    continue;
-                
-                if (cameraSpacePoints[index].Y > topCutoff)
-                    continue;
+                    if (cameraSpacePoints[index].Y > topCutoff)
+                        continue;
+                }
                 
                 // Create a valid point
                 ValidPoint point = new ValidPoint(colorSpacePoints[index], index, cameraSpacePoints[index].Z);
@@ -190,14 +197,13 @@ public class MeasureDepth : MonoBehaviour
                 //     point.withinWallDepth = true;
                 // }
                 
-
-                    if(wallDepths.TryGetValue(point.pos, out var depth))
-                    {
-                        if(depth >= point.z)
-                        {
-                            point.withinWallDepth = true;
-                        }
-                    }
+                    // if(wallDepths.TryGetValue(point.pos, out var depth))
+                    // {
+                    //     if(depth >= point.z)
+                    //     {
+                    //         point.withinWallDepth = true;
+                    //     }
+                    // }
 
                 // Add the point to the list
                 validPoints.Add(point);
@@ -210,9 +216,8 @@ public class MeasureDepth : MonoBehaviour
     {
         // Create a list of trigger points
         List<Vector2> triggerPoints = new List<Vector2>();
-
+        
         // For each valid point
-        int index = 0;
         foreach (ValidPoint point in points)
         {
             //if(point.withinWallDepth) Debug.Log("Within wall depth");
@@ -227,20 +232,19 @@ public class MeasureDepth : MonoBehaviour
                 //     triggerPoints.Add(screenPoint);
                 // }
 
-                if (wallDepths.TryGetValue(point.pos, out var depth))
-                {
-                    //Debug.Log("Depth: " + depth + " Point: " + point.z);
-                    
-                    if(depth + sensitivity < point.z)
-                    {
-                        Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
-                        triggerPoints.Add(screenPoint);
-                    }
-                }
-                else Debug.Log(point.pos);
-            }
 
-            index++;
+                //else Debug.Log(point.pos);
+            }
+            
+            if (wallDepths.TryGetValue(point.pos, out var depth))
+            {
+                if(depth + sensitivity > point.z)
+                {
+                    Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
+                    triggerPoints.Add(screenPoint);
+                }
+                //else Debug.Log("Depth: " + depth + " Point: " + point.z);
+            }
         }
         return triggerPoints;
     }
