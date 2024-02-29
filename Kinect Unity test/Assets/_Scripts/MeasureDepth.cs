@@ -115,23 +115,23 @@ public class MeasureDepth : MonoBehaviour
             SetWallDepth();
         }
         
-        //on mouse click, create custom rect
-        if (Input.GetMouseButtonDown(0))
-        {
-            CreateCustomRect();
-        }
+        ////on mouse click, create custom rect
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    CreateCustomRect();
+        //}
         
-        // on right mouse click, reset corner
-        if (Input.GetMouseButtonDown(1))
-        {
-            corner = Corner.TopLeft;
+        //// on right mouse click, reset corner
+        //if (Input.GetMouseButtonDown(1))
+        //{
+        //    corner = Corner.TopLeft;
             
-            //Set all the cutoffs to 3
-            leftCutoff = -3;
-            rightCutoff = 3;
-            topCutoff = 3;
-            bottomCutoff = -3;
-        }
+        //    //Set all the cutoffs to 3
+        //    leftCutoff = -3;
+        //    rightCutoff = 3;
+        //    topCutoff = 3;
+        //    bottomCutoff = -3;
+        //}
     }
 
     private void SetWallDepth()

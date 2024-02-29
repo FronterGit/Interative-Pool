@@ -47,7 +47,7 @@ public class Calibration : MonoBehaviour
         }
         if (Input.GetKey(KeyCode.RightArrow))
         {
-            mainCamera.transform.position -= new Vector3(1f, 0, 0);
+            mainCamera.transform.position += new Vector3(1f, 0, 0);
         }
     }
 }
