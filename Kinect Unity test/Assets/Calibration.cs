@@ -39,7 +39,7 @@ public class Calibration : MonoBehaviour
         }
         if (Input.GetKey(KeyCode.DownArrow))
         {
-            mainCamera.transform.position += new Vector3(0, 1f, 0);
+            mainCamera.transform.position -= new Vector3(0, 1f, 0);
         }
         if (Input.GetKey(KeyCode.LeftArrow))
         {

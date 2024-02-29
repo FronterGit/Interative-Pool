@@ -24,7 +24,7 @@ public class MeasureDepth : MonoBehaviour
     // Cutoff values
     [Header("Depth settings")] 
     [Range(1, 8)] public int accuracy = 2;
-    [Range(-0.03f, 0f)] public float rangeFromSurface = -0.01f;
+    [Range(-0.04f, 0f)] public float rangeFromSurface = -0.01f;
     
     [Header("Cutoffs")]
     [Range(-1.5f, 1.5f)] public float topCutoff = 1f;
@@ -76,7 +76,7 @@ public class MeasureDepth : MonoBehaviour
         wallDepths = new Dictionary<float, float>();
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         // Get the valid points
         validPoints = DepthToColor();
@@ -84,6 +84,11 @@ public class MeasureDepth : MonoBehaviour
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
         
+        
+    }
+
+    private void Update()
+    {
         if (Input.GetKeyDown(KeyCode.Space))
         {
             // Toggle debug
@@ -95,8 +100,13 @@ public class MeasureDepth : MonoBehaviour
             // If debug, create the rect and texture
             if (debug)
             {
-                
+                Debug.Log("Creating texture and stopping coroutines");
                 depthTexture = CreateTexture(validPoints);
+                StopAllCoroutines();
+            }
+            else if (!debug)
+            {
+                StartCoroutine(SpawnParticles());
             }
         }
         CreateValidPointRect(validPoints);
@@ -122,12 +132,6 @@ public class MeasureDepth : MonoBehaviour
             topCutoff = 3;
             bottomCutoff = -3;
         }
-        
-        if(!debug)
-        {
-            SpawnParticles(triggerPoints);
-        }
-
     }
 
     private void SetWallDepth()
@@ -145,19 +149,26 @@ public class MeasureDepth : MonoBehaviour
         }
     }
 
-    private void SpawnParticles(List<Vector2> triggerPoints)
+    private IEnumerator SpawnParticles()
     {
+        Debug.Log("Spawning particles");
         // If no trigger points, return
-        if (triggerPoints.Count == 0)
-        {
-            return;
-        }
+        // if (triggerPoints.Count == 0)
+        // {
+        //     Debug.Log("No trigger points");
+        //     StopAllCoroutines();
+        //     yield return new WaitForNextFrameUnit();
+        //     StartCoroutine(SpawnParticles());
+        // }
         
         // For each trigger point, tell the particle spawner to spawn a particle at the trigger point
         foreach (Vector2 point in triggerPoints)
         {
             particleSpawner.SpawnParticle(point);
         }
+
+        yield return new WaitForSeconds(0.04f);
+        StartCoroutine(SpawnParticles());
     }
 
     private void OnGUI()
