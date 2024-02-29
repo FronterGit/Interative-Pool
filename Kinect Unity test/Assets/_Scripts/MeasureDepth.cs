@@ -115,6 +115,12 @@ public class MeasureDepth : MonoBehaviour
         if (Input.GetMouseButtonDown(1))
         {
             corner = Corner.TopLeft;
+            
+            //Set all the cutoffs to 3
+            leftCutoff = -3;
+            rightCutoff = 3;
+            topCutoff = 3;
+            bottomCutoff = -3;
         }
         
         if(!debug)
@@ -491,8 +497,9 @@ public class MeasureDepth : MonoBehaviour
         Vector2 normalizedCameraPoint = new Vector2(cameraPosition.x / mainCamera.pixelWidth, cameraPosition.y / mainCamera.pixelHeight);
     
         // Convert the normalized camera position to screen coordinates
-        Vector2 screenPoint = new Vector2(Mathf.Lerp(-1.239277f, 1.201952f, normalizedCameraPoint.x), Mathf.Lerp(-0.9924252f, 1.074169f, normalizedCameraPoint.y));
-    
+        //Vector2 screenPoint = new Vector2(Mathf.Lerp(-1.239277f, 1.201952f, normalizedCameraPoint.x), Mathf.Lerp(-0.9924252f, 1.074169f, normalizedCameraPoint.y));
+        Vector2 screenPoint = new Vector2(Mathf.Lerp(-1.6f, 1.5f, normalizedCameraPoint.x), Mathf.Lerp(-.9f, .8f, normalizedCameraPoint.y));
+        
         return screenPoint;
     }
     
