@@ -5599,6 +5599,8 @@ MonoBehaviour:
   rightCutoff: 1.22
   heightCutoff: 0
   depthTexture: {fileID: 0}
+  particleSpawnDelay: 1
+  timesToCheck: 4
 --- !u!4 &1753546446
 Transform:
   m_ObjectHideFlags: 0

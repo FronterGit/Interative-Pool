@@ -5,6 +5,7 @@ using UnityEngine;
 using Windows.Kinect;
 using Unity.VisualScripting;
 using UnityEngine.Serialization;
+using Random = System.Random;
 
 public class MeasureDepth : MonoBehaviour
 {
@@ -60,6 +61,8 @@ public class MeasureDepth : MonoBehaviour
     private float highestY;
     private float lowestY;
     
+    private List<Vector3> particlesToSpawn = new List<Vector3>();
+
     private void Awake()
     {
         // Set variables
@@ -83,12 +86,13 @@ public class MeasureDepth : MonoBehaviour
         
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
-        
-        
+
+        Debug.Log("Trigger points: " + triggerPoints.Count);
     }
 
     private void Update()
     {
+        SpawnParticles();
         if (Input.GetKeyDown(KeyCode.Space))
         {
             // Toggle debug
@@ -100,15 +104,11 @@ public class MeasureDepth : MonoBehaviour
             // If debug, create the rect and texture
             if (debug)
             {
-                Debug.Log("Creating texture and stopping coroutines");
                 depthTexture = CreateTexture(validPoints);
                 StopAllCoroutines();
             }
-            else if (!debug)
-            {
-                StartCoroutine(SpawnParticles());
-            }
         }
+
         CreateValidPointRect(validPoints);
         if (Input.GetKeyDown(KeyCode.A))
         {
@@ -149,27 +149,22 @@ public class MeasureDepth : MonoBehaviour
         }
     }
 
-    private IEnumerator SpawnParticles()
+    private void SpawnParticles()
     {
-        Debug.Log("Spawning particles");
-        // If no trigger points, return
-        // if (triggerPoints.Count == 0)
+        // for (int i = 0; i < triggerPoints.Count; i++)
         // {
-        //     Debug.Log("No trigger points");
-        //     StopAllCoroutines();
-        //     yield return new WaitForNextFrameUnit();
-        //     StartCoroutine(SpawnParticles());
+        //     particleSpawner.SpawnParticle(triggerPoints[i]);
         // }
-        
-        // For each trigger point, tell the particle spawner to spawn a particle at the trigger point
-        foreach (Vector2 point in triggerPoints)
+        for(int i = 0; i < 300; i++)
         {
-            particleSpawner.SpawnParticle(point);
+            if (particlesToSpawn.Count == 0) break;
+            Vector3 position = particlesToSpawn[UnityEngine.Random.Range(0, particlesToSpawn.Count)];
+            particleSpawner.SpawnParticle(position);
+            particlesToSpawn.Remove(position);
         }
-
-        yield return new WaitForSeconds(0.04f);
-        StartCoroutine(SpawnParticles());
+        particlesToSpawn.Clear();
     }
+    
 
     private void OnGUI()
     {
@@ -254,12 +249,6 @@ public class MeasureDepth : MonoBehaviour
     
     private void SetHighestAndLowest(CameraSpacePoint point)
     {
-        // Remember the highest and lowest x and y values
-        float oldHighestX = highestX;
-        float oldLowestX = lowestX;
-        float oldHighestY = highestY;
-        float oldLowestY = lowestY;
-        
         if (point.X > highestX)
         {
             highestX = point.X;
@@ -295,6 +284,7 @@ public class MeasureDepth : MonoBehaviour
                     // Add the point to the trigger points
                     Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
                     triggerPoints.Add(screenPoint);
+                    particlesToSpawn.Add(new Vector3(point.colorSpace.X, point.colorSpace.Y, point.z));
                 }
             }
         }
