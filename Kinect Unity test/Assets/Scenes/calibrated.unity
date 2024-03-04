@@ -1008,7 +1008,7 @@ ParticleSystem:
         m_RotationOrder: 4
     randomizeRotationDirection: 0
     gravitySource: 1
-    maxNumParticles: 300
+    maxNumParticles: 900
     customEmitterVelocity: {x: 0, y: 0, z: 0}
     size3D: 0
     rotation3D: 0
@@ -1450,20 +1450,20 @@ ParticleSystem:
         - serializedVersion: 3
           time: 0
           value: 0
-          inSlope: 10.205437
-          outSlope: 10.205437
-          tangentMode: 0
-          weightedMode: 0
-          inWeight: 0
-          outWeight: 0.1782304
-        - serializedVersion: 3
-          time: 1
-          value: 1
           inSlope: 2
           outSlope: 2
           tangentMode: 0
           weightedMode: 0
           inWeight: 0
+          outWeight: 0
+        - serializedVersion: 3
+          time: 0.9461975
+          value: 0.013513565
+          inSlope: -6.053787
+          outSlope: -6.053787
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.21704368
           outWeight: 0
         m_PreInfinity: 2
         m_PostInfinity: 2
@@ -5226,13 +5226,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 506882119}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: 0.0061361613, w: 0.99998116}
   m_LocalPosition: {x: 1808, y: 519, z: 533}
-  m_LocalScale: {x: -1.62, y: -1.6899992, z: -0.85}
+  m_LocalScale: {x: -1.4400002, y: -1.4899994, z: -0.85}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 180, y: 180, z: 180}
+  m_LocalEulerAnglesHint: {x: 180, y: 180, z: 180.703}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -5667,7 +5667,7 @@ MonoBehaviour:
   particleSpawner: {fileID: 506882120}
   viewer: {fileID: 324076149}
   accuracy: 2
-  rangeFromSurface: -0.014
+  rangeFromSurface: -0.0128
   topCutoff: 0.83
   bottomCutoff: -0.38
   leftCutoff: -1.2
