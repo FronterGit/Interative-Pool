@@ -21,6 +21,7 @@ public class MeasureDepth : MonoBehaviour
     private Camera mainCamera;
     private Rect validSpaceRect;
     private bool debug = true;
+    private MultiSourceFrameReader multiSourceFrameReader;
     
     // Cutoff values
     [Header("Depth settings")] 
@@ -79,6 +80,8 @@ public class MeasureDepth : MonoBehaviour
         InputManager.setDepthEvent -= SetWallDepth;
         InputManager.rangeFromSurfaceEvent -= SetRangeFromSurface;
         InputManager.heightCutOffEvent -= SetHeightCutoff;
+        
+        multiSourceFrameReader.MultiSourceFrameArrived -= DepthToColor;
     }
 
     private void Awake()
@@ -87,6 +90,10 @@ public class MeasureDepth : MonoBehaviour
         sensor = KinectSensor.GetDefault();
         coordinateMapper = sensor.CoordinateMapper;
         mainCamera = Camera.main;
+        
+        multiSourceFrameReader = sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Depth | FrameSourceTypes.Color);
+        multiSourceFrameReader.MultiSourceFrameArrived += DepthToColor;
+        
         
         // The array size is the product of the x and y resolution
         int arraySize = depthResolution.x * depthResolution.y;
@@ -104,9 +111,6 @@ public class MeasureDepth : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // Get the valid points
-        validPoints = DepthToColor();
-        
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
         
@@ -174,7 +178,13 @@ public class MeasureDepth : MonoBehaviour
     private void SetWallDepth()
     {
         // Get the valid points
-        validPoints = DepthToColor(true);
+        //DepthToColor(true);
+
+        if (validPoints == null)
+        {
+            Debug.Log("SetWallDepth: No valid points");
+            return;
+        }
         
         // Clear any previous wall depths
         wallDepths.Clear();
@@ -213,7 +223,7 @@ public class MeasureDepth : MonoBehaviour
         }
     }
 
-    private List<ValidPoint> DepthToColor(bool setWallDepth = false)
+    private void DepthToColor(object sender, MultiSourceFrameArrivedEventArgs e)
     {
         // Create a list of valid points
         List<ValidPoint> validPoints = new List<ValidPoint>();
@@ -235,7 +245,7 @@ public class MeasureDepth : MonoBehaviour
                 index *= accuracy;
 
                 // If we're not setting the wall depth, check if the point is within the cutoffs
-                if (!setWallDepth)
+                //if (!setWallDepth)
                 {
                     if (cameraSpacePoints[index].X < leftCutoff)
                         continue;
@@ -264,7 +274,7 @@ public class MeasureDepth : MonoBehaviour
                 validPoints.Add(point);
             }
         }
-        return validPoints;
+        this.validPoints = validPoints;
     }
     
     private void SetHighestAndLowest(CameraSpacePoint point)
@@ -292,6 +302,13 @@ public class MeasureDepth : MonoBehaviour
         // Create a list of trigger points
         List<Vector2> triggerPoints = new List<Vector2>();
         
+        //Null check
+        if (points == null)
+        {
+            Debug.Log("FilterToTrigger: No points");
+            return triggerPoints;
+        }
+        
         // For each valid point
         foreach (ValidPoint point in points)
         {
@@ -315,6 +332,13 @@ public class MeasureDepth : MonoBehaviour
         // Create a texture
         Texture2D texture = new Texture2D(1920, 1080, TextureFormat.Alpha8, false);
         
+        //Null check
+        if (validPoints == null)
+        {
+            Debug.Log("CreateTexture: validPoints is null");
+            return texture;
+        }
+        
         // Set the texture to clear
         for(int x = 0; x < 1920; x++)
         {
@@ -336,13 +360,18 @@ public class MeasureDepth : MonoBehaviour
     }
 
     #region Rect Creation
-    private Rect CreateValidPointRect(List<ValidPoint> points)
+    private void CreateValidPointRect(List<ValidPoint> points)
     {
+        if (points == null)
+        {
+            Debug.Log("Points are null");
+            return;
+        }
         // If no points, return empty validSpaceRect
         if (points.Count == 0)
         {
             Debug.Log("No points");
-            return new Rect();
+            return;
         }
         
         // Get top left and bottom right
@@ -360,8 +389,6 @@ public class MeasureDepth : MonoBehaviour
         // Create the validSpaceRect
         Vector2 size = new Vector2(width, height);
         validSpaceRect = new Rect(screenTopLeft, size);
-        
-        return validSpaceRect;
     }
 
     private Rect CreateCustomRect()

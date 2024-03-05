@@ -31,6 +31,7 @@ public class ParticleSpawner : MonoBehaviour
 
     public void SetParticles(List<Vector2> triggerPoints)
     {
+        if(triggerPoints == null) return;
         // This method will spawn particles at the trigger points. particlesPerFrame is the amount of particles to spawn per frame.
         // Recommended value is 300.
         for(int i = 0; i < particlesPerFrame; i++)
