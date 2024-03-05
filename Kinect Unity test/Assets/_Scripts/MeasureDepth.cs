@@ -61,7 +61,25 @@ public class MeasureDepth : MonoBehaviour
     private float highestY;
     private float lowestY;
     
-    private List<Vector3> particlesToSpawn = new List<Vector3>();
+    //Input Variables
+    private float rangeFromSurfaceInput;
+    private float heightCutoffInput;
+
+    private void OnEnable()
+    {
+        InputManager.switchEvent += SwitchView;
+        InputManager.setDepthEvent += SetWallDepth;
+        InputManager.rangeFromSurfaceEvent += SetRangeFromSurface;
+        InputManager.heightCutOffEvent += SetHeightCutoff;
+    }
+    
+    private void OnDisable()
+    {
+        InputManager.switchEvent -= SwitchView;
+        InputManager.setDepthEvent -= SetWallDepth;
+        InputManager.rangeFromSurfaceEvent -= SetRangeFromSurface;
+        InputManager.heightCutOffEvent -= SetHeightCutoff;
+    }
 
     private void Awake()
     {
@@ -79,6 +97,11 @@ public class MeasureDepth : MonoBehaviour
         wallDepths = new Dictionary<float, float>();
     }
 
+    private void Start()
+    {
+        SetWallDepth();
+    }
+
     private void FixedUpdate()
     {
         // Get the valid points
@@ -86,35 +109,17 @@ public class MeasureDepth : MonoBehaviour
         
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
-
-        Debug.Log("Trigger points: " + triggerPoints.Count);
+        
+        SetSettings();
     }
 
     private void Update()
     {
-        SpawnParticles();
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            // Toggle debug
-            debug = !debug;
-            
-            // Toggle the viewer
-            viewer.SetActive(debug);
-            
-            // If debug, create the rect and texture
-            if (debug)
-            {
-                depthTexture = CreateTexture(validPoints);
-                StopAllCoroutines();
-            }
-        }
-
-        CreateValidPointRect(validPoints);
-        if (Input.GetKeyDown(KeyCode.A))
-        {
-            SetWallDepth();
-        }
+        particleSpawner.SetParticles(triggerPoints);
         
+        CreateValidPointRect(validPoints);
+        
+
         ////on mouse click, create custom rect
         //if (Input.GetMouseButtonDown(0))
         //{
@@ -133,6 +138,38 @@ public class MeasureDepth : MonoBehaviour
         //    bottomCutoff = -3;
         //}
     }
+        
+    private void SetRangeFromSurface(float rangeFromSurface)
+    {
+        rangeFromSurfaceInput = rangeFromSurface;
+    }
+    
+    private void SetHeightCutoff(float heightCutoff)
+    {
+        heightCutoffInput = heightCutoff;
+    }
+
+    
+    private void SetSettings()
+    {
+        heightCutoff += 0.01f * heightCutoffInput;
+        rangeFromSurface += 0.0002f * rangeFromSurfaceInput;
+    }
+
+    private void SwitchView()
+    {
+        // Toggle debug
+        debug = !debug;
+            
+        // Toggle the viewer
+        viewer.SetActive(debug);
+            
+        // If debug, create the rect and texture
+        if (debug)
+        {
+            depthTexture = CreateTexture(validPoints);
+        }
+    }
 
     private void SetWallDepth()
     {
@@ -148,23 +185,6 @@ public class MeasureDepth : MonoBehaviour
             wallDepths.Add(validPoints[i].index, validPoints[i].z);
         }
     }
-
-    private void SpawnParticles()
-    {
-        // for (int i = 0; i < triggerPoints.Count; i++)
-        // {
-        //     particleSpawner.SpawnParticle(triggerPoints[i]);
-        // }
-        for(int i = 0; i < 300; i++)
-        {
-            if (particlesToSpawn.Count == 0) break;
-            Vector3 position = particlesToSpawn[UnityEngine.Random.Range(0, particlesToSpawn.Count)];
-            particleSpawner.SpawnParticle(position);
-            particlesToSpawn.Remove(position);
-        }
-        particlesToSpawn.Clear();
-    }
-    
 
     private void OnGUI()
     {
@@ -284,7 +304,6 @@ public class MeasureDepth : MonoBehaviour
                     // Add the point to the trigger points
                     Vector2 screenPoint = ScreenToCamera(new Vector2(point.colorSpace.X, point.colorSpace.Y));
                     triggerPoints.Add(screenPoint);
-                    particlesToSpawn.Add(new Vector3(point.colorSpace.X, point.colorSpace.Y, point.z));
                 }
             }
         }
