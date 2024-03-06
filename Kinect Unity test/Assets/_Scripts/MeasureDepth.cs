@@ -13,14 +13,17 @@ public class MeasureDepth : MonoBehaviour
     [Header("References")]
     [SerializeField] private MultiSourceManager multiSourceManager;
     [SerializeField] private ParticleSpawner particleSpawner;
-    [SerializeField] private GameObject viewer;
+    [SerializeField] private CalibrationParticleSpawner calibrationParticleSpawner;
+    
+    // Events
+    public static event System.Action<TableCutoffs> broadcastTableCutoffsEvent;
     
     // Declarations
     private KinectSensor sensor;
     private CoordinateMapper coordinateMapper;
     private Camera mainCamera;
     private Rect validSpaceRect;
-    private bool debug = true;
+    private bool tableView = true;
     private MultiSourceFrameReader multiSourceFrameReader;
     
     // Cutoff values
@@ -41,6 +44,7 @@ public class MeasureDepth : MonoBehaviour
     private ColorSpacePoint[] colorSpacePoints;
     private List<ValidPoint> validPoints;
     private List<Vector2> triggerPoints;
+    private List<Vector2> filteredPoints;
     private Dictionary<float, float> wallDepths;
     
     // Depth Variables
@@ -65,10 +69,13 @@ public class MeasureDepth : MonoBehaviour
     //Input Variables
     private float rangeFromSurfaceInput;
     private float heightCutoffInput;
+    
+    private UIManager.State currentState;
 
     private void OnEnable()
     {
-        InputManager.switchEvent += SwitchView;
+        UIManager.onSwitchState += SwitchView;
+        
         InputManager.setDepthEvent += SetWallDepth;
         InputManager.rangeFromSurfaceEvent += SetRangeFromSurface;
         InputManager.heightCutOffEvent += SetHeightCutoff;
@@ -76,7 +83,8 @@ public class MeasureDepth : MonoBehaviour
     
     private void OnDisable()
     {
-        InputManager.switchEvent -= SwitchView;
+        UIManager.onSwitchState -= SwitchView;
+        
         InputManager.setDepthEvent -= SetWallDepth;
         InputManager.rangeFromSurfaceEvent -= SetRangeFromSurface;
         InputManager.heightCutOffEvent -= SetHeightCutoff;
@@ -111,17 +119,16 @@ public class MeasureDepth : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // Filter the valid points to trigger points
-        triggerPoints = FilterToTrigger(validPoints);
-        
         SetSettings();
     }
 
     private void Update()
     {
-        particleSpawner.SetParticles(triggerPoints);
+        //If we're not in tableView mode, give the trigger points to the particle spawner
+        if(!tableView) particleSpawner.SetParticles(triggerPoints);
         
-        CreateValidPointRect(validPoints);
+        //If we're in tableView mode, create the valid space rect to show the table cutoffs
+        if(tableView) CreateValidPointRect(validPoints);
         
 
         ////on mouse click, create custom rect
@@ -160,21 +167,81 @@ public class MeasureDepth : MonoBehaviour
         rangeFromSurface += 0.0002f * rangeFromSurfaceInput;
     }
 
-    private void SwitchView()
+    private void SwitchView(UIManager.State state)
     {
-        // Toggle debug
-        debug = !debug;
-            
-        // Toggle the viewer
-        viewer.SetActive(debug);
-            
-        // If debug, create the rect and texture
-        if (debug)
+        currentState = state;
+        switch (currentState)
         {
-            depthTexture = CreateTexture(validPoints);
+            case UIManager.State.Particles:
+                tableView = false;
+                break;
+            case UIManager.State.Calibration:
+                filterPointsForCalibration();
+                tableView = false;
+                break;
+            case UIManager.State.Table:
+                depthTexture = CreateTexture(validPoints);
+                tableView = true;
+                break;
         }
     }
+    
+    private void filterPointsForCalibration()
+    {
+        // Create a list of valid points
+        List<Vector2> filteredPoints = new List<Vector2>();
+        
+        // Get the depth data from the MultiSourceManager
+        depthData = multiSourceManager.GetDepthData();
+        
+        // Map the depth data to the space
+        coordinateMapper.MapDepthFrameToCameraSpace(depthData, cameraSpacePoints);
+        coordinateMapper.MapDepthFrameToColorSpace(depthData, colorSpacePoints);
+        
+        // Set the valid points
+        for(int x = 0; x < depthResolution.x / accuracy; x++)
+        {
+            for(int y = 0; y < depthResolution.y / accuracy; y++)
+            {
+                // Get the index
+                int index = (y * depthResolution.x) + x;
+                index *= accuracy;
 
+                //skip infinities
+                if (float.IsInfinity(cameraSpacePoints[index].X) || float.IsInfinity(cameraSpacePoints[index].Y) || float.IsInfinity(cameraSpacePoints[index].Z))
+                {
+                    continue;
+                }
+
+                if (cameraSpacePoints[index].X > leftCutoff && cameraSpacePoints[index].X < leftCutoff + 0.01f)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    continue;
+                }
+
+                if (cameraSpacePoints[index].X > rightCutoff && cameraSpacePoints[index].X < rightCutoff + 0.01f)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    continue;
+                }
+                
+                if (cameraSpacePoints[index].Y < bottomCutoff && cameraSpacePoints[index].Y > bottomCutoff - 0.01f)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    continue;
+                }
+
+                if (cameraSpacePoints[index].Y > topCutoff && cameraSpacePoints[index].Y < topCutoff + 0.01f)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                }
+            }
+        }
+        this.filteredPoints = filteredPoints;
+        
+        calibrationParticleSpawner.SpawnCalibrationParticles(filteredPoints);
+    }
+    
     private void SetWallDepth()
     {
         // Get the valid points
@@ -198,8 +265,7 @@ public class MeasureDepth : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!debug) return;
-        
+        if (!tableView) return;
         // Draw the validSpaceRect
         GUI.Box(validSpaceRect, "");
         
@@ -208,7 +274,7 @@ public class MeasureDepth : MonoBehaviour
         GUI.Box(customRect, "");
         GUI.color = Color.black;
 
-        // Return and debug if no trigger points
+        // Return and tableView if no trigger points
         if (triggerPoints == null)
         {
             Debug.Log("No trigger points");
@@ -227,6 +293,7 @@ public class MeasureDepth : MonoBehaviour
     {
         // Create a list of valid points
         List<ValidPoint> validPoints = new List<ValidPoint>();
+        List<Vector2> filteredPoints = new List<Vector2>();
         
         // Get the depth data from the MultiSourceManager
         depthData = multiSourceManager.GetDepthData();
@@ -244,28 +311,39 @@ public class MeasureDepth : MonoBehaviour
                 int index = (y * depthResolution.x) + x;
                 index *= accuracy;
 
-                // If we're not setting the wall depth, check if the point is within the cutoffs
-                //if (!setWallDepth)
+                //skip infinities
+                if (float.IsInfinity(cameraSpacePoints[index].X) || float.IsInfinity(cameraSpacePoints[index].Y) || float.IsInfinity(cameraSpacePoints[index].Z))
                 {
-                    if (cameraSpacePoints[index].X < leftCutoff)
-                        continue;
-                    
-                    if (cameraSpacePoints[index].X > rightCutoff)
-                        continue;
-                    
-                    if (cameraSpacePoints[index].Y < bottomCutoff)
-                        continue;
-                    
-                    if (cameraSpacePoints[index].Y > topCutoff)
-                        continue;
-                    
-                    //skip infinities
-                    if (float.IsInfinity(cameraSpacePoints[index].X) || float.IsInfinity(cameraSpacePoints[index].Y) || float.IsInfinity(cameraSpacePoints[index].Z))
-                    {
-                        continue;
-                    }
-                    SetHighestAndLowest(cameraSpacePoints[index]);
+                    continue;
                 }
+
+                if (cameraSpacePoints[index].X < leftCutoff)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    continue;
+                }
+
+                if (cameraSpacePoints[index].X > rightCutoff)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    continue;
+                }
+                
+                if (cameraSpacePoints[index].Y < bottomCutoff)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    continue;
+                }
+                
+                if (cameraSpacePoints[index].Y > topCutoff)
+                {
+                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    continue;
+                }
+                
+
+                SetHighestAndLowest(cameraSpacePoints[index]);
+
                 
                 // Create a valid point
                 ValidPoint point = new ValidPoint(colorSpacePoints[index], index, cameraSpacePoints[index].Z);
@@ -275,6 +353,11 @@ public class MeasureDepth : MonoBehaviour
             }
         }
         this.validPoints = validPoints;
+        this.filteredPoints = filteredPoints;
+        
+        // Filter the valid points to trigger points
+        triggerPoints = FilterToTrigger(validPoints);
+
     }
     
     private void SetHighestAndLowest(CameraSpacePoint point)
@@ -423,7 +506,7 @@ public class MeasureDepth : MonoBehaviour
                 corner = Corner.TopLeft;
                 break;
         }
-        //debug log all the cutoffs
+        //tableView log all the cutoffs
         Debug.Log("Left: " + leftCutoff + " Right: " + rightCutoff + " Top: " + topCutoff + " Bottom: " + bottomCutoff);
     
         return customRect;
@@ -466,7 +549,7 @@ public class MeasureDepth : MonoBehaviour
     //             corner = Corner.TopLeft;
     //             break;
     //     }
-    //     //debug log all the cutoffs
+    //     //tableView log all the cutoffs
     //     Debug.Log("Left: " + leftCutoff + " Right: " + rightCutoff + " Top: " + topCutoff + " Bottom: " + bottomCutoff);
     //
     //     return customRect;
@@ -564,5 +647,21 @@ public class MeasureDepth : MonoBehaviour
             this.z = z;
             this.index = index;
         }
+    }
+
+    public class TableCutoffs
+    {
+        public TableCutoffs(float left, float right, float top, float bottom)
+        {
+            this.left = left;
+            this.right = right;
+            this.top = top;
+            this.bottom = bottom;
+        }
+        
+        public float left;
+        public float right;
+        public float top;
+        public float bottom;
     }
 }

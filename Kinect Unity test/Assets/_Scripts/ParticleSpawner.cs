@@ -29,23 +29,23 @@ public class ParticleSpawner : MonoBehaviour
         main.maxParticles = maxParticles;
     }
 
-    public void SetParticles(List<Vector2> triggerPoints)
+    public void SetParticles(List<Vector2> points)
     {
-        if(triggerPoints == null) return;
+        if(points == null) return;
         // This method will spawn particles at the trigger points. particlesPerFrame is the amount of particles to spawn per frame.
         // Recommended value is 300.
         for(int i = 0; i < particlesPerFrame; i++)
         {
             // If there are no particles to spawn, break
-            if (triggerPoints.Count == 0) break;
+            if (points.Count == 0) break;
             
             // Spawn a particle at a random trigger point. You could not do this randomly and instead spawn particles sequentially,
             // but doing it randomly will give a more interesting effect.
-            Vector3 position = triggerPoints[UnityEngine.Random.Range(0, triggerPoints.Count)];
+            Vector3 position = points[UnityEngine.Random.Range(0, points.Count)];
             SpawnParticle(position);
             
             // Remove the position from the list so that we don't spawn a particle at the same position
-            triggerPoints.Remove(position);
+            points.Remove(position);
         }
     }
 
