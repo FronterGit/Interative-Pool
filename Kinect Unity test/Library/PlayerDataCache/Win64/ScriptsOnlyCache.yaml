@@ -2,11 +2,13 @@ ScriptsOnlyBuild:
   usedScripts:
     Assembly-CSharp.dll:
     - Calibration
+    - CalibrationParticleSpawner
     - ImageViewer
     - InputManager
     - MeasureDepth
     - MultiSourceManager
     - ParticleSpawner
+    - UIManager
     Unity.InputSystem.dll:
     - UnityEngine.InputSystem.InputActionAsset
     - UnityEngine.InputSystem.InputActionReference
@@ -16,8 +18,15 @@ ScriptsOnlyBuild:
     - UnityEngine.InputSystem.RemoteInputPlayerConnection
     Unity.Rider.Editor.dll:
     - Packages.Rider.Editor.RiderScriptEditorData
-    - Packages.Rider.Editor.RiderScriptEditorPersistedState
     - Packages.Rider.Editor.UnitTesting.CallbackData
+    Unity.TextMeshPro:
+    - TMPro.TMP_FontAsset
+    - TMPro.TMP_Settings
+    - TMPro.TMP_SpriteAsset
+    - TMPro.TMP_StyleSheet
+    Unity.TextMeshPro.dll:
+    - TMPro.TMP_FontAsset
+    - TMPro.TextMeshProUGUI
     UnityEditor.Graphs.dll:
     - UnityEditor.Graphs.AnimationBlendTree.Graph
     - UnityEditor.Graphs.AnimationBlendTree.GraphGUI
@@ -44,8 +53,28 @@ ScriptsOnlyBuild:
     - UnityEngine.InputSystem.PlayerInput/ControlsChangedEvent
     - UnityEngine.InputSystem.PlayerInput/DeviceLostEvent
     - UnityEngine.InputSystem.PlayerInput/DeviceRegainedEvent
+    Unity.TextMeshPro:
+    - TMPro.FaceInfo_Legacy
+    - TMPro.FontAssetCreationSettings
+    - TMPro.KerningTable
+    - TMPro.TMP_Character
+    - TMPro.TMP_FontFeatureTable
+    - TMPro.TMP_FontWeightPair
+    - TMPro.TMP_GlyphAdjustmentRecord
+    - TMPro.TMP_GlyphPairAdjustmentRecord
+    - TMPro.TMP_GlyphValueRecord
+    - TMPro.TMP_Sprite
+    - TMPro.TMP_SpriteCharacter
+    - TMPro.TMP_SpriteGlyph
+    - TMPro.TMP_Style
+    - TMPro.VertexGradient
     UnityEngine.CoreModule:
     - UnityEngine.Events.PersistentCallGroup
+    UnityEngine.TextCoreFontEngineModule:
+    - UnityEngine.TextCore.FaceInfo
+    - UnityEngine.TextCore.Glyph
+    - UnityEngine.TextCore.GlyphMetrics
+    - UnityEngine.TextCore.GlyphRect
     UnityEngine.UI:
     - UnityEngine.UI.MaskableGraphic/CullStateChangedEvent
   methodsToPreserve: []
@@ -63,6 +92,8 @@ ScriptsOnlyBuild:
       Script: {instanceID: 0}
     - Class: 48
       Script: {instanceID: 0}
+    - Class: 49
+      Script: {instanceID: 0}
     - Class: 81
       Script: {instanceID: 0}
     - Class: 89
@@ -72,36 +103,52 @@ ScriptsOnlyBuild:
     - Class: 108
       Script: {instanceID: 0}
     - Class: 114
-      Script: {instanceID: 1510}
+      Script: {instanceID: 1576}
     - Class: 114
-      Script: {instanceID: 1514}
+      Script: {instanceID: 1608}
     - Class: 114
-      Script: {instanceID: 1586}
+      Script: {instanceID: 1612}
     - Class: 114
-      Script: {instanceID: 1590}
+      Script: {instanceID: 2262}
     - Class: 114
-      Script: {instanceID: 2380}
+      Script: {instanceID: 2402}
     - Class: 114
-      Script: {instanceID: 2558}
+      Script: {instanceID: 2580}
     - Class: 114
-      Script: {instanceID: 2722}
+      Script: {instanceID: 2744}
     - Class: 114
-      Script: {instanceID: 2944}
+      Script: {instanceID: 2966}
     - Class: 114
-      Script: {instanceID: 3962}
+      Script: {instanceID: 3986}
     - Class: 114
-      Script: {instanceID: 6100}
+      Script: {instanceID: 4442}
     - Class: 114
-      Script: {instanceID: 6634}
+      Script: {instanceID: 4730}
     - Class: 114
-      Script: {instanceID: 7042}
+      Script: {instanceID: 4744}
     - Class: 114
-      Script: {instanceID: 7778}
+      Script: {instanceID: 5456}
     - Class: 114
-      Script: {instanceID: 8276}
+      Script: {instanceID: 5524}
     - Class: 114
-      Script: {instanceID: 24142}
+      Script: {instanceID: 6128}
+    - Class: 114
+      Script: {instanceID: 6296}
+    - Class: 114
+      Script: {instanceID: 6320}
+    - Class: 114
+      Script: {instanceID: 6664}
+    - Class: 114
+      Script: {instanceID: 7072}
+    - Class: 114
+      Script: {instanceID: 7808}
+    - Class: 114
+      Script: {instanceID: 8106}
+    - Class: 114
+      Script: {instanceID: 8308}
     - Class: 115
+      Script: {instanceID: 0}
+    - Class: 128
       Script: {instanceID: 0}
     - Class: 157
       Script: {instanceID: 0}
@@ -122,28 +169,16 @@ ScriptsOnlyBuild:
   scriptHashData:
   - hash:
       serializedVersion: 2
-      Hash: 24f9f62134f5c18448c44c09b1dae11f
-    assemblyName: Assembly-CSharp
-    namespaceName: 
-    className: ParticleSpawner
-  - hash:
-      serializedVersion: 2
-      Hash: b5b8cec1061a8978c9849be31dc1eb63
-    assemblyName: Assembly-CSharp
-    namespaceName: 
-    className: BodySourceView
-  - hash:
-      serializedVersion: 2
-      Hash: 4858c9d32c4579ca32559bf1ba865342
-    assemblyName: Assembly-CSharp
-    namespaceName: 
-    className: MeasureDepth
-  - hash:
-      serializedVersion: 2
       Hash: 55060a7bf226ac385ce19ebd450f199f
     assemblyName: UnityEngine.UI
     namespaceName: UnityEngine.UIElements
     className: PanelRaycaster
+  - hash:
+      serializedVersion: 2
+      Hash: 56879d474952c40ea2b171cd677437a4
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: CalibrationParticleSpawner
   - hash:
       serializedVersion: 2
       Hash: dd9dda1dfd39e605c49e72003342ef5d
@@ -452,6 +487,12 @@ ScriptsOnlyBuild:
     className: VariablesAsset
   - hash:
       serializedVersion: 2
+      Hash: b5b8cec1061a8978c9849be31dc1eb63
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: BodySourceView
+  - hash:
+      serializedVersion: 2
       Hash: 7bdff9e91edfd9600f92a185def7e34a
     assemblyName: Unity.VisualScripting.Flow
     namespaceName: Unity.VisualScripting
@@ -650,6 +691,12 @@ ScriptsOnlyBuild:
     className: UnityOnCancelMessageListener
   - hash:
       serializedVersion: 2
+      Hash: 86f0850d33b9baa4705bac5f90fc7864
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: InputManager
+  - hash:
+      serializedVersion: 2
       Hash: ea1b87a3bfed09792e7720338241c7a0
     assemblyName: Unity.InputSystem
     namespaceName: UnityEngine.InputSystem.Editor
@@ -782,6 +829,12 @@ ScriptsOnlyBuild:
     className: HorizontalLayoutGroup
   - hash:
       serializedVersion: 2
+      Hash: d1a6c748b0293adbf36d2db85b5f0d7c
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: MeasureDepth
+  - hash:
+      serializedVersion: 2
       Hash: 191cd500c627cd6682ef6f70b8e47f2c
     assemblyName: Unity.VisualScripting.Core
     namespaceName: Unity.VisualScripting
@@ -870,6 +923,12 @@ ScriptsOnlyBuild:
     assemblyName: Unity.TextMeshPro
     namespaceName: TMPro
     className: TextMeshProUGUI
+  - hash:
+      serializedVersion: 2
+      Hash: 24f9f62134f5c18448c44c09b1dae11f
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: ParticleSpawner
   - hash:
       serializedVersion: 2
       Hash: da5a949a0bbd2ff91bc51c5805c2c41f
@@ -1124,6 +1183,12 @@ ScriptsOnlyBuild:
     className: MultiplayerEventSystem
   - hash:
       serializedVersion: 2
+      Hash: 2e95c3e3e173097d3606e813b1f45744
+    assemblyName: Assembly-CSharp
+    namespaceName: 
+    className: UIManager
+  - hash:
+      serializedVersion: 2
       Hash: 2bbd05175d4cdd21e24f9716cdd24f83
     assemblyName: Unity.InputSystem
     namespaceName: UnityEngine.InputSystem.XR
@@ -1212,12 +1277,6 @@ ScriptsOnlyBuild:
     assemblyName: Unity.VisualScripting.Core
     namespaceName: Unity.VisualScripting
     className: UnityOnSliderValueChangedMessageListener
-  - hash:
-      serializedVersion: 2
-      Hash: 2a961d1eb7847d355761a591863c4515
-    assemblyName: Assembly-CSharp
-    namespaceName: 
-    className: InputManager
   platform: 19
   scenePathNames:
   - Assets/Scenes/calibrated.unity
