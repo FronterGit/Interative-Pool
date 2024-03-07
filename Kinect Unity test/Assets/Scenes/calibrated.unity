@@ -590,6 +590,7 @@ MonoBehaviour:
   rangeFromSurfaceAction: {fileID: 4831435346969427990, guid: 4a90ddd654177c44e92da1caadffab10, type: 3}
   heightCutOffAction: {fileID: 7254186887716753097, guid: 4a90ddd654177c44e92da1caadffab10, type: 3}
   showControlsAction: {fileID: 3431498505020970999, guid: 4a90ddd654177c44e92da1caadffab10, type: 3}
+  scaleParticlesAction: {fileID: 6024938332921633686, guid: 4a90ddd654177c44e92da1caadffab10, type: 3}
 --- !u!4 &429615786
 Transform:
   m_ObjectHideFlags: 0
@@ -662,6 +663,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 10e6e3a9-1ff3-4ff9-925a-c35ee63373b5
     m_ActionName: User/ShowControls[/Keyboard/c]
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 8a404116-aaae-433a-8f68-4c14c59a6d4b
+    m_ActionName: User/ScaleParticles[/Keyboard/w,/Keyboard/s,/Keyboard/a,/Keyboard/d]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: User

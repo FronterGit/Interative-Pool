@@ -76,6 +76,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "ScaleParticles",
+                    "type": "Value",
+                    "id": "8a404116-aaae-433a-8f68-4c14c59a6d4b",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -181,7 +190,7 @@
                 {
                     "name": "negative",
                     "id": "15fca9ef-5173-4c61-bdd9-8e1d0f401040",
-                    "path": "<Keyboard>/w",
+                    "path": "<Keyboard>/r",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -192,7 +201,7 @@
                 {
                     "name": "positive",
                     "id": "333980d5-178c-46c2-923c-2c426c041398",
-                    "path": "<Keyboard>/s",
+                    "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -214,7 +223,7 @@
                 {
                     "name": "",
                     "id": "b2988410-f1b2-4aee-a1e4-d418f5f47bce",
-                    "path": "<Keyboard>/a",
+                    "path": "<Keyboard>/z",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -236,7 +245,7 @@
                 {
                     "name": "negative",
                     "id": "b9900e2c-135a-423e-94ce-d4c65c9c3a85",
-                    "path": "<Keyboard>/r",
+                    "path": "<Keyboard>/t",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -247,7 +256,7 @@
                 {
                     "name": "positive",
                     "id": "eaa853c5-38d8-43cf-b309-6826b524b01e",
-                    "path": "<Keyboard>/t",
+                    "path": "<Keyboard>/y",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -269,7 +278,7 @@
                 {
                     "name": "negative",
                     "id": "8ffb6aab-673f-4d58-9f18-b5514f33f218",
-                    "path": "<Keyboard>/f",
+                    "path": "<Keyboard>/g",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -280,7 +289,7 @@
                 {
                     "name": "positive",
                     "id": "39661921-9e0d-473e-9ae6-b1a5a42b2a5f",
-                    "path": "<Keyboard>/g",
+                    "path": "<Keyboard>/h",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -298,6 +307,61 @@
                     "action": "ShowControls",
                     "isComposite": false,
                     "isPartOfComposite": false
+                },
+                {
+                    "name": "2D Vector",
+                    "id": "1fb3faab-7abf-4909-9f75-db1a8b67f490",
+                    "path": "2DVector",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ScaleParticles",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "up",
+                    "id": "f9b0b990-9c17-4d61-bc9a-58162681dd7d",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ScaleParticles",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "down",
+                    "id": "14a36f9b-7679-4c86-9cfd-911b01fbdcce",
+                    "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ScaleParticles",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "left",
+                    "id": "b585e3db-ab0f-47d4-ad48-ee2f8cfb5fa7",
+                    "path": "<Keyboard>/a",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ScaleParticles",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "right",
+                    "id": "9da624a5-e24c-4c8d-a5fb-27a9909be1fd",
+                    "path": "<Keyboard>/d",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ScaleParticles",
+                    "isComposite": false,
+                    "isPartOfComposite": true
                 }
             ]
         }

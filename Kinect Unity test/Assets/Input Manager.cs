@@ -17,18 +17,22 @@ public class InputManager : MonoBehaviour
     [SerializeField] private InputActionReference rangeFromSurfaceAction;
     [SerializeField] private InputActionReference heightCutOffAction;
     [SerializeField] private InputActionReference showControlsAction;
+    [SerializeField] private InputActionReference scaleParticlesAction;
     
     private Vector2 move;
     private float rotate;
     private float zoom;
     private float rangeFromSurface;
     private float heightCutOff;
+    private Vector2 scaleParticles;
 
     public static event System.Action<Vector2> moveEvent;
     public static event System.Action<float> rotateEvent;
     public static event System.Action<float> zoomEvent;
     public static event System.Action<float> rangeFromSurfaceEvent;
     public static event System.Action<float> heightCutOffEvent;
+    
+    public static event System.Action<Vector2> scaleParticlesEvent;
     
     
     public static event System.Action switchEvent;
@@ -51,6 +55,9 @@ public class InputManager : MonoBehaviour
         
         heightCutOffAction.action.performed += OnHeightCutoff;
         heightCutOffAction.action.canceled += OnHeightCutoff;
+        
+        scaleParticlesAction.action.performed += OnScaleParticles;
+        scaleParticlesAction.action.canceled += OnScaleParticles;
         
         switchAction.action.performed += OnSwitch;
         
@@ -75,6 +82,9 @@ public class InputManager : MonoBehaviour
         
         heightCutOffAction.action.performed -= OnHeightCutoff;
         heightCutOffAction.action.canceled -= OnHeightCutoff;
+        
+        scaleParticlesAction.action.performed -= OnScaleParticles;
+        scaleParticlesAction.action.canceled -= OnScaleParticles;
         
         switchAction.action.performed -= OnSwitch;
         
@@ -144,5 +154,14 @@ public class InputManager : MonoBehaviour
     {
         //Raise the event
         showControlsEvent?.Invoke();
+    }
+    
+    private void OnScaleParticles(InputAction.CallbackContext context)
+    {
+        //Read the value of the input
+        scaleParticles = context.ReadValue<Vector2>();
+        
+        //Raise the event
+        scaleParticlesEvent?.Invoke(scaleParticles);
     }
 }
