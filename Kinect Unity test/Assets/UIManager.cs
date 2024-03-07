@@ -16,6 +16,7 @@ public class UIManager : MonoBehaviour
 
     [SerializeField] private GameObject particleView;
     [SerializeField] private GameObject calibrationView;
+    [SerializeField] private GameObject controls;
     [SerializeField] private GameObject tableView;
     public enum State { Particles, Calibration, Table }
     private State currentState;
@@ -25,11 +26,13 @@ public class UIManager : MonoBehaviour
     private void OnEnable()
     {
         InputManager.switchEvent += OnSwitch;
+        InputManager.showControlsEvent += OnShowControls;
     }
     
     private void OnDisable()
     {
         InputManager.switchEvent -= OnSwitch;
+        InputManager.showControlsEvent -= OnShowControls;
     }
     
     void Start()
@@ -71,5 +74,10 @@ public class UIManager : MonoBehaviour
                 break;
         }
         onSwitchState?.Invoke(currentState);
+    }
+    
+    private void OnShowControls()
+    {
+        controls.SetActive(!controls.activeSelf);
     }
 }

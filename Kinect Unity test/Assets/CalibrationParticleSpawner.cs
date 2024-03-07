@@ -11,12 +11,14 @@ public class CalibrationParticleSpawner : MonoBehaviour
     {
         particleSystem = GetComponent<ParticleSystem>();
     }
+    
+    public void ClearCalibrationParticles()
+    {
+        particleSystem.Clear();
+    }
         
     public void SpawnCalibrationParticles(List<Vector2> points)
     {
-        //clear all particles
-        particleSystem.Clear();
-        
         ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
         emitParams.startLifetime = Single.PositiveInfinity;
         

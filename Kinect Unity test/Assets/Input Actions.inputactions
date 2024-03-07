@@ -67,6 +67,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "ShowControls",
+                    "type": "Button",
+                    "id": "10e6e3a9-1ff3-4ff9-925a-c35ee63373b5",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -278,6 +287,17 @@
                     "action": "SetHeightCutoff",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "43e46e4a-7b39-477b-9db4-e795c5b731c6",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ShowControls",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

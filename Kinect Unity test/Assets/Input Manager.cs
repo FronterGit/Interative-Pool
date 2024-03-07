@@ -16,6 +16,7 @@ public class InputManager : MonoBehaviour
     [SerializeField] private InputActionReference setDepthAction;
     [SerializeField] private InputActionReference rangeFromSurfaceAction;
     [SerializeField] private InputActionReference heightCutOffAction;
+    [SerializeField] private InputActionReference showControlsAction;
     
     private Vector2 move;
     private float rotate;
@@ -32,6 +33,7 @@ public class InputManager : MonoBehaviour
     
     public static event System.Action switchEvent;
     public static event System.Action setDepthEvent;
+    public static event System.Action showControlsEvent;
     
     private void OnEnable()
     {
@@ -53,6 +55,8 @@ public class InputManager : MonoBehaviour
         switchAction.action.performed += OnSwitch;
         
         setDepthAction.action.performed += OnSetDepth;
+        
+        showControlsAction.action.performed += OnShowControls;
     }
     
     private void OnDisable()
@@ -76,6 +80,7 @@ public class InputManager : MonoBehaviour
         
         setDepthAction.action.performed -= OnSetDepth;
         
+        showControlsAction.action.performed -= OnShowControls;
     }
     
     private void OnMove(InputAction.CallbackContext context)
@@ -133,5 +138,11 @@ public class InputManager : MonoBehaviour
     {
         //Raise the event
         setDepthEvent?.Invoke();
+    }
+    
+    private void OnShowControls(InputAction.CallbackContext context)
+    {
+        //Raise the event
+        showControlsEvent?.Invoke();
     }
 }

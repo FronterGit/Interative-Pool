@@ -9,16 +9,13 @@ using Random = System.Random;
 
 public class MeasureDepth : MonoBehaviour
 {
-    // Setup
+    //Setup
     [Header("References")]
     [SerializeField] private MultiSourceManager multiSourceManager;
     [SerializeField] private ParticleSpawner particleSpawner;
     [SerializeField] private CalibrationParticleSpawner calibrationParticleSpawner;
     
-    // Events
-    public static event System.Action<TableCutoffs> broadcastTableCutoffsEvent;
-    
-    // Declarations
+    //Declarations
     private KinectSensor sensor;
     private CoordinateMapper coordinateMapper;
     private Camera mainCamera;
@@ -26,7 +23,7 @@ public class MeasureDepth : MonoBehaviour
     private bool tableView = true;
     private MultiSourceFrameReader multiSourceFrameReader;
     
-    // Cutoff values
+    //Cutoff values
     [Header("Depth settings")] 
     [Range(1, 8)] public int accuracy = 2;
     [Range(-0.04f, 0f)] public float rangeFromSurface = -0.01f;
@@ -38,38 +35,23 @@ public class MeasureDepth : MonoBehaviour
     [Range(-1.5f, 1.5f)] public float rightCutoff = 1f;
     [Range(0f, 3f)] public float heightCutoff = 0.5f;
     
-    // Depth data
+    //Depth data
     private ushort[] depthData;
     private CameraSpacePoint[] cameraSpacePoints;
     private ColorSpacePoint[] colorSpacePoints;
     private List<ValidPoint> validPoints;
     private List<Vector2> triggerPoints;
-    private List<Vector2> filteredPoints;
     private Dictionary<float, float> wallDepths;
     
-    // Depth Variables
+    //Depth Variables
     private readonly Vector2Int depthResolution = new(512, 424);
     public Texture2D depthTexture;
-    
-    // Custom rect variables
-    private enum Corner
-    {
-        TopLeft,
-        TopRight,
-        BottomRight
-    }
-    private Corner corner;
-    private Rect customRect;
-    
-    private float highestX;
-    private float lowestX;
-    private float highestY;
-    private float lowestY;
     
     //Input Variables
     private float rangeFromSurfaceInput;
     private float heightCutoffInput;
     
+    //Other Variables
     private UIManager.State currentState;
 
     private void OnEnable()
@@ -99,9 +81,9 @@ public class MeasureDepth : MonoBehaviour
         coordinateMapper = sensor.CoordinateMapper;
         mainCamera = Camera.main;
         
+        // Open the multiSourceFrameReader and subscribe to the MultiSourceFrameArrived event
         multiSourceFrameReader = sensor.OpenMultiSourceFrameReader(FrameSourceTypes.Depth | FrameSourceTypes.Color);
         multiSourceFrameReader.MultiSourceFrameArrived += DepthToColor;
-        
         
         // The array size is the product of the x and y resolution
         int arraySize = depthResolution.x * depthResolution.y;
@@ -110,11 +92,6 @@ public class MeasureDepth : MonoBehaviour
         cameraSpacePoints = new CameraSpacePoint[arraySize];
         colorSpacePoints = new ColorSpacePoint[arraySize];
         wallDepths = new Dictionary<float, float>();
-    }
-
-    private void Start()
-    {
-        SetWallDepth();
     }
 
     private void FixedUpdate()
@@ -129,67 +106,61 @@ public class MeasureDepth : MonoBehaviour
         
         //If we're in tableView mode, create the valid space rect to show the table cutoffs
         if(tableView) CreateValidPointRect(validPoints);
-        
-
-        ////on mouse click, create custom rect
-        //if (Input.GetMouseButtonDown(0))
-        //{
-        //    CreateCustomRect();
-        //}
-        
-        //// on right mouse click, reset corner
-        //if (Input.GetMouseButtonDown(1))
-        //{
-        //    corner = Corner.TopLeft;
-            
-        //    //Set all the cutoffs to 3
-        //    leftCutoff = -3;
-        //    rightCutoff = 3;
-        //    topCutoff = 3;
-        //    bottomCutoff = -3;
-        //}
     }
         
     private void SetRangeFromSurface(float rangeFromSurface)
     {
+        //This method listens to the InputManager for the range from surface input
         rangeFromSurfaceInput = rangeFromSurface;
     }
     
     private void SetHeightCutoff(float heightCutoff)
     {
+        //This method listens to the InputManager for the height cutoff input
         heightCutoffInput = heightCutoff;
     }
 
     
     private void SetSettings()
     {
+        //This method is called in fixed update and sets the range from surface and height cutoff when there is input
         heightCutoff += 0.01f * heightCutoffInput;
         rangeFromSurface += 0.0002f * rangeFromSurfaceInput;
     }
 
     private void SwitchView(UIManager.State state)
     {
+        //This method listens to the UIManager's state and acts accordingly
         currentState = state;
         switch (currentState)
         {
             case UIManager.State.Particles:
+                //We're no longer in tableView mode
                 tableView = false;
                 break;
+            
             case UIManager.State.Calibration:
-                filterPointsForCalibration();
-                tableView = false;
+                //We want to set the calibration particles. These particles are at the cutoffs of the table.
+                SetCalibrationParticles();
                 break;
+            
             case UIManager.State.Table:
+                //We want to clear the calibration particles
+                calibrationParticleSpawner.ClearCalibrationParticles();
+                
+                //We want to create a texture of the valid points
                 depthTexture = CreateTexture(validPoints);
+                
+                //We're now in tableView mode
                 tableView = true;
                 break;
         }
     }
     
-    private void filterPointsForCalibration()
+    private void SetCalibrationParticles()
     {
         // Create a list of valid points
-        List<Vector2> filteredPoints = new List<Vector2>();
+        List<Vector2> edgePoints = new List<Vector2>();
         
         // Get the depth data from the MultiSourceManager
         depthData = multiSourceManager.GetDepthData();
@@ -213,40 +184,37 @@ public class MeasureDepth : MonoBehaviour
                     continue;
                 }
 
+                //If the point is within one of the cutoffs, add it to the edgePoints list
                 if (cameraSpacePoints[index].X > leftCutoff && cameraSpacePoints[index].X < leftCutoff + 0.01f)
                 {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    edgePoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                     continue;
                 }
 
                 if (cameraSpacePoints[index].X > rightCutoff && cameraSpacePoints[index].X < rightCutoff + 0.01f)
                 {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    edgePoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                     continue;
                 }
                 
                 if (cameraSpacePoints[index].Y < bottomCutoff && cameraSpacePoints[index].Y > bottomCutoff - 0.01f)
                 {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    edgePoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                     continue;
                 }
 
                 if (cameraSpacePoints[index].Y > topCutoff && cameraSpacePoints[index].Y < topCutoff + 0.01f)
                 {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
+                    edgePoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                 }
             }
         }
-        this.filteredPoints = filteredPoints;
-        
-        calibrationParticleSpawner.SpawnCalibrationParticles(filteredPoints);
+        //Spawn the calibration particles
+        calibrationParticleSpawner.SpawnCalibrationParticles(edgePoints);
     }
     
     private void SetWallDepth()
     {
-        // Get the valid points
-        //DepthToColor(true);
-
         if (validPoints == null)
         {
             Debug.Log("SetWallDepth: No valid points");
@@ -268,10 +236,6 @@ public class MeasureDepth : MonoBehaviour
         if (!tableView) return;
         // Draw the validSpaceRect
         GUI.Box(validSpaceRect, "");
-        
-        // Draw the customRect
-        GUI.color = Color.blue;
-        GUI.Box(customRect, "");
         GUI.color = Color.black;
 
         // Return and tableView if no trigger points
@@ -313,37 +277,20 @@ public class MeasureDepth : MonoBehaviour
 
                 //skip infinities
                 if (float.IsInfinity(cameraSpacePoints[index].X) || float.IsInfinity(cameraSpacePoints[index].Y) || float.IsInfinity(cameraSpacePoints[index].Z))
-                {
                     continue;
-                }
 
+                //filter out the points that are not within the cutoffs
                 if (cameraSpacePoints[index].X < leftCutoff)
-                {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                     continue;
-                }
-
+                
                 if (cameraSpacePoints[index].X > rightCutoff)
-                {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                     continue;
-                }
                 
                 if (cameraSpacePoints[index].Y < bottomCutoff)
-                {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                     continue;
-                }
                 
                 if (cameraSpacePoints[index].Y > topCutoff)
-                {
-                    filteredPoints.Add(new Vector2(colorSpacePoints[index].X, colorSpacePoints[index].Y));
                     continue;
-                }
-                
-
-                SetHighestAndLowest(cameraSpacePoints[index]);
-
                 
                 // Create a valid point
                 ValidPoint point = new ValidPoint(colorSpacePoints[index], index, cameraSpacePoints[index].Z);
@@ -353,31 +300,10 @@ public class MeasureDepth : MonoBehaviour
             }
         }
         this.validPoints = validPoints;
-        this.filteredPoints = filteredPoints;
         
         // Filter the valid points to trigger points
         triggerPoints = FilterToTrigger(validPoints);
 
-    }
-    
-    private void SetHighestAndLowest(CameraSpacePoint point)
-    {
-        if (point.X > highestX)
-        {
-            highestX = point.X;
-        }
-        if (point.X < lowestX)
-        {
-            lowestX = point.X;
-        }
-        if (point.Y > highestY)
-        {
-            highestY = point.Y;
-        }
-        if (point.Y < lowestY)
-        {
-            lowestY = point.Y;
-        }
     }
 
     private List<Vector2> FilterToTrigger(List<ValidPoint> points)
@@ -474,87 +400,6 @@ public class MeasureDepth : MonoBehaviour
         validSpaceRect = new Rect(screenTopLeft, size);
     }
 
-    private Rect CreateCustomRect()
-    {
-        switch(corner)
-        {
-            case Corner.TopLeft:
-                customRect = new Rect(Input.mousePosition.x, -Input.mousePosition.y + 1080, 1, 1);
-                
-                //Set the left cutoff
-                leftCutoff = CameraToScreen(customRect.position).x;
-                
-                //Set the top cutoff
-                topCutoff = -CameraToScreen(customRect.position).y;
-                
-                corner = Corner.TopRight;
-                break;
-            case Corner.TopRight:
-                customRect.width = Input.mousePosition.x - customRect.x;
-                
-                //Set the right cutoff
-                rightCutoff = CameraToScreen(new Vector2(Input.mousePosition.x, customRect.position.y)).x;
-                
-                corner = Corner.BottomRight;
-                break;
-            case Corner.BottomRight:
-                customRect.height = -1 * (customRect.position.y - (-Input.mousePosition.y + 1080));
-                
-                //Set the bottom cutoff
-                bottomCutoff = -CameraToScreen(new Vector2(customRect.position.x, -Input.mousePosition.y + 1080)).y;
-                
-                corner = Corner.TopLeft;
-                break;
-        }
-        //tableView log all the cutoffs
-        Debug.Log("Left: " + leftCutoff + " Right: " + rightCutoff + " Top: " + topCutoff + " Bottom: " + bottomCutoff);
-    
-        return customRect;
-    }
-    
-    // private Rect CreateCustomRect()
-    // {
-    //     Vector2 mousePos;
-    //     switch(corner)
-    //     {
-    //         case Corner.TopLeft:
-    //             customRect = new Rect(Input.mousePosition.x, -Input.mousePosition.y + 1080, 1, 1);
-    //             
-    //             //Set the left cutoff
-    //             mousePos = MouseToDepth(Input.mousePosition);
-    //             leftCutoff = CameraToScreen(mousePos).x;
-    //             
-    //             //Set the top cutoff
-    //             mousePos = MouseToDepth(Input.mousePosition);
-    //             topCutoff = -CameraToScreen(mousePos).y;
-    //             
-    //             corner = Corner.TopRight;
-    //             break;
-    //         case Corner.TopRight:
-    //             customRect.width = Input.mousePosition.x - customRect.x;
-    //             
-    //             //Set the right cutoff
-    //             mousePos = MouseToDepth(Input.mousePosition);
-    //             rightCutoff = CameraToScreen(mousePos).x;
-    //             
-    //             corner = Corner.BottomRight;
-    //             break;
-    //         case Corner.BottomRight:
-    //             customRect.height = -1 * (customRect.position.y - (-Input.mousePosition.y + 1080));
-    //             
-    //             //Set the bottom cutoff
-    //             mousePos = MouseToDepth(Input.mousePosition);
-    //             bottomCutoff = -CameraToScreen(new Vector2(customRect.position.x, -mousePos.y + 1080)).y;
-    //             
-    //             corner = Corner.TopLeft;
-    //             break;
-    //     }
-    //     //tableView log all the cutoffs
-    //     Debug.Log("Left: " + leftCutoff + " Right: " + rightCutoff + " Top: " + topCutoff + " Bottom: " + bottomCutoff);
-    //
-    //     return customRect;
-    // }
-
     // Method that gets the top left point of the valid points
     private Vector2 GetTopLeft(List<ValidPoint> points)
     {
@@ -608,31 +453,6 @@ public class MeasureDepth : MonoBehaviour
         return screenPoint;
     }
     
-    // Method that translates the mouse position on this resolution to the depth resolution
-    private Vector2 MouseToDepth(Vector2 mousePosition)
-    {
-        Vector2 normalizedMousePoint = 
-            new Vector2(Mathf.InverseLerp(0, 1920, mousePosition.x), Mathf.InverseLerp(0, 1080, mousePosition.y));
-        
-        Vector2 depthPoint = new Vector2(normalizedMousePoint.x * 1000, normalizedMousePoint.y * 1000);
-        
-        return depthPoint;
-    }
-    
-    // Method that translates the camera position to screen position
-    private Vector2 CameraToScreen(Vector2 cameraPosition)
-    {
-        // Highest X: 1.201952 Lowest X: -1.239277 Highest Y: 1.074169 Lowest Y: -0.9924252
-        // Normalize the camera position based on the camera's pixel width and height
-        Vector2 normalizedCameraPoint = new Vector2(cameraPosition.x / mainCamera.pixelWidth, cameraPosition.y / mainCamera.pixelHeight);
-    
-        // Convert the normalized camera position to screen coordinates
-        //Vector2 screenPoint = new Vector2(Mathf.Lerp(-1.239277f, 1.201952f, normalizedCameraPoint.x), Mathf.Lerp(-0.9924252f, 1.074169f, normalizedCameraPoint.y));
-        Vector2 screenPoint = new Vector2(Mathf.Lerp(-1.6f, 1.5f, normalizedCameraPoint.x), Mathf.Lerp(-.9f, .8f, normalizedCameraPoint.y));
-        
-        return screenPoint;
-    }
-    
     #endregion
     
     public class ValidPoint
@@ -647,21 +467,5 @@ public class MeasureDepth : MonoBehaviour
             this.z = z;
             this.index = index;
         }
-    }
-
-    public class TableCutoffs
-    {
-        public TableCutoffs(float left, float right, float top, float bottom)
-        {
-            this.left = left;
-            this.right = right;
-            this.top = top;
-            this.bottom = bottom;
-        }
-        
-        public float left;
-        public float right;
-        public float top;
-        public float bottom;
     }
 }
