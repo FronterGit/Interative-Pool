@@ -50,9 +50,6 @@ public class MeasureDepth : MonoBehaviour
     //Input Variables
     private float rangeFromSurfaceInput;
     private float heightCutoffInput;
-    
-    //Other Variables
-    private UIManager.State currentState;
 
     private void OnEnable()
     {
@@ -128,11 +125,10 @@ public class MeasureDepth : MonoBehaviour
         rangeFromSurface += 0.0002f * rangeFromSurfaceInput;
     }
 
-    private void SwitchView(UIManager.State state)
+    private void SwitchView()
     {
         //This method listens to the UIManager's state and acts accordingly
-        currentState = state;
-        switch (currentState)
+        switch (UIManager.currentState)
         {
             case UIManager.State.Particles:
                 //We're no longer in tableView mode
@@ -215,6 +211,7 @@ public class MeasureDepth : MonoBehaviour
     
     private void SetWallDepth()
     {
+        if (UIManager.currentState == UIManager.State.Particles) return;
         if (validPoints == null)
         {
             Debug.Log("SetWallDepth: No valid points");
@@ -257,7 +254,6 @@ public class MeasureDepth : MonoBehaviour
     {
         // Create a list of valid points
         List<ValidPoint> validPoints = new List<ValidPoint>();
-        List<Vector2> filteredPoints = new List<Vector2>();
         
         // Get the depth data from the MultiSourceManager
         depthData = multiSourceManager.GetDepthData();

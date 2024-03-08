@@ -37,6 +37,8 @@ public class Calibration : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (UIManager.currentState != UIManager.State.Calibration) return;
+        
         mainCamera.transform.position += new Vector3(-move.x, -move.y, -zoom);
         mainCamera.transform.Rotate(new Vector3(0, 0, 0.1f * rotate));
 

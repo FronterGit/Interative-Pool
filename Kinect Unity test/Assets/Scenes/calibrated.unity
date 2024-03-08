@@ -243,11 +243,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 157151902}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1361.7034, y: 81.840515, z: -149.44916}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1361.7032, y: 81.84051, z: -149.44916}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1238939629}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &222706138
@@ -5632,13 +5633,50 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "HOW TO CALIBRATE:\n\n1. Calibrating the depth\n\n1.1. Empty the table.
-    Press A to set the depth of the table.\n1.2. Populate the table with balls. Increase
-    or decrease the sensitivity with R and T. \n(TIP: Decrease it until there are
-    particles everywhere, then gruadally increase it until you see only the balls.)\n1.3.
-    Increase or decrease the height cutoff with F and G.\n\n\n2. Moving the view\n\n2.1.
-    Move the camera with the arrow keys.\n2.2. Rotate the camera with Q and E.\n2.3.
-    Zoom the camera in/out with W and S.\n\n3. Press ENTER to save or ESC to revert.\n\n\n"
+  m_text: 'HOW TO CALIBRATE:
+
+
+    1. Calibrating the depth
+
+
+    1.1. Empty the
+    table. Press [Y] to set the depth of the table.
+
+    1.2. Populate the table
+    with balls. Increase or decrease the sensitivity with [U] and [J].
+
+    (TIP:
+    Decrease it until there are particles everywhere, then gruadally increase it
+    until you see only the balls)
+
+    1.3. Increase or decrease the height cutoff
+    with [I] and [K].
+
+    (TIP: Hover a cue above the table, then gradually decrease
+    the height cutoff until it''s not visible anymore)
+
+
+
+    2. Moving the view
+
+
+    2.1.
+    Move the camera with the arrow keys.
+
+    2.2. Rotate the camera with [Q] and
+    [E].
+
+    2.3. Zoom the camera in/out with [R] and [F].
+
+    2.4 Scale the particles
+    with [W] and [S].
+
+
+    3. Press ENTER to save or ESC to revert.
+
+
+
+'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11495,11 +11533,11 @@ Transform:
   m_GameObject: {fileID: 1238939625}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.0061361613, w: 0.99998116}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: -1.4400002, y: -1.4899994, z: -0.85}
+  m_LocalPosition: {x: -1361.7034, y: -81.840515, z: 149.44916}
+  m_LocalScale: {x: -1.4400003, y: -1.4899994, z: -0.85}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 157151904}
   m_LocalEulerAnglesHint: {x: 180, y: 180, z: 180.703}
 --- !u!1 &1503710585
 GameObject:
@@ -11817,8 +11855,7 @@ SceneRoots:
   - {fileID: 759920894}
   - {fileID: 37903034}
   - {fileID: 1753546446}
-  - {fileID: 506882123}
-  - {fileID: 1238939629}
   - {fileID: 157151904}
+  - {fileID: 506882123}
   - {fileID: 429615786}
   - {fileID: 310517446}
