@@ -367,6 +367,7 @@
 "Assets/KinectView/Scripts/InfraredSourceView.cs"
 "Assets/KinectView/Scripts/MultiSourceManager.cs"
 "Assets/_Scripts/Calibration.cs"
+"Assets/_Scripts/CalibrationMenu.cs"
 "Assets/_Scripts/CalibrationParticleSpawner.cs"
 "Assets/_Scripts/ImageViewer.cs"
 "Assets/_Scripts/Input Manager.cs"

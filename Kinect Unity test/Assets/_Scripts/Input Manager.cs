@@ -18,6 +18,7 @@ public class InputManager : MonoBehaviour
     [SerializeField] private InputActionReference heightCutOffAction;
     [SerializeField] private InputActionReference showControlsAction;
     [SerializeField] private InputActionReference scaleParticlesAction;
+    [SerializeField] private InputActionReference menuChoiceAction;
     
     private Vector2 move;
     private float rotate;
@@ -33,11 +34,12 @@ public class InputManager : MonoBehaviour
     public static event System.Action<float> heightCutOffEvent;
     
     public static event System.Action<Vector2> scaleParticlesEvent;
+    public static event System.Action<float> menuChoiceEvent;
     
     
     public static event System.Action switchEvent;
     public static event System.Action setDepthEvent;
-    public static event System.Action showControlsEvent;
+    public static event System.Action toggleControlsMenuEvent;
     
     private void OnEnable()
     {
@@ -64,6 +66,8 @@ public class InputManager : MonoBehaviour
         setDepthAction.action.performed += OnSetDepth;
         
         showControlsAction.action.performed += OnShowControls;
+        
+        menuChoiceAction.action.performed += OnMenuChoice;
     }
     
     private void OnDisable()
@@ -91,6 +95,8 @@ public class InputManager : MonoBehaviour
         setDepthAction.action.performed -= OnSetDepth;
         
         showControlsAction.action.performed -= OnShowControls;
+        
+        menuChoiceAction.action.performed -= OnMenuChoice;
     }
     
     private void OnMove(InputAction.CallbackContext context)
@@ -153,7 +159,7 @@ public class InputManager : MonoBehaviour
     private void OnShowControls(InputAction.CallbackContext context)
     {
         //Raise the event
-        showControlsEvent?.Invoke();
+        toggleControlsMenuEvent?.Invoke();
     }
     
     private void OnScaleParticles(InputAction.CallbackContext context)
@@ -163,5 +169,15 @@ public class InputManager : MonoBehaviour
         
         //Raise the event
         scaleParticlesEvent?.Invoke(scaleParticles);
+    }
+    
+    private void OnMenuChoice(InputAction.CallbackContext context)
+    {
+        //Read the value of the input
+        var choice = context.ReadValue<float>();
+        
+        //Raise the event
+        menuChoiceEvent?.Invoke(choice);
+        Debug.Log("Menu choice: " + choice);
     }
 }

@@ -85,6 +85,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
+                },
+                {
+                    "name": "MenuChoice",
+                    "type": "Button",
+                    "id": "a5f6bb40-6b0d-4361-9334-4223829795e1",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -362,6 +371,28 @@
                     "action": "ScaleParticles",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "0f6ace45-7d2a-49b2-9e99-a2f8ae2309a4",
+                    "path": "<Keyboard>/1",
+                    "interactions": "Press",
+                    "processors": "Scale",
+                    "groups": "",
+                    "action": "MenuChoice",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d2c6b4e9-38ea-405a-bade-9eec20df2da5",
+                    "path": "<Keyboard>/2",
+                    "interactions": "Press",
+                    "processors": "Scale(factor=2)",
+                    "groups": "",
+                    "action": "MenuChoice",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

@@ -22,17 +22,18 @@ public class UIManager : MonoBehaviour
     public static State currentState;
     
     public static event System.Action onSwitchState;
+    public static event System.Action<bool> onToggleControlsMenu;
     
     private void OnEnable()
     {
         InputManager.switchEvent += OnSwitch;
-        InputManager.showControlsEvent += OnShowControls;
+        InputManager.toggleControlsMenuEvent += OnToggleControlsMenu;
     }
     
     private void OnDisable()
     {
         InputManager.switchEvent -= OnSwitch;
-        InputManager.showControlsEvent -= OnShowControls;
+        InputManager.toggleControlsMenuEvent -= OnToggleControlsMenu;
     }
     
     void Start()
@@ -76,8 +77,9 @@ public class UIManager : MonoBehaviour
         onSwitchState?.Invoke();
     }
     
-    private void OnShowControls()
+    private void OnToggleControlsMenu()
     {
         controls.SetActive(!controls.activeSelf);
+        onToggleControlsMenu?.Invoke(controls.activeSelf);
     }
 }

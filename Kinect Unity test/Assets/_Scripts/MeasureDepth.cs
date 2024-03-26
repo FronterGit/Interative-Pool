@@ -121,7 +121,7 @@ public class MeasureDepth : MonoBehaviour
     private void SetSettings()
     {
         //This method is called in fixed update and sets the range from surface and height cutoff when there is input
-        heightCutoff += 0.01f * heightCutoffInput;
+        heightCutoff += 0.005f * heightCutoffInput;
         rangeFromSurface += 0.0002f * rangeFromSurfaceInput;
     }
 
